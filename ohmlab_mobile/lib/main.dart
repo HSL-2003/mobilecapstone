@@ -14,12 +14,19 @@ class OhmLabApp extends StatelessWidget {
     return MaterialApp(
       title: 'Ohm Lab Mobile',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.deepPurple, useMaterial3: true),
+      theme: ThemeData(
+        primarySwatch: Colors.orange, 
+        useMaterial3: true,
+        fontFamily: 'Inter', // Assuming we use a modern font, otherwise default is fine
+      ),
       initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginScreen(),
-        '/main': (context) =>
-            MainScreen(), 
+        '/main': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          final role = args?['role'] as String? ?? 'student';
+          return MainScreen(role: role);
+        },
       },
     );
   }

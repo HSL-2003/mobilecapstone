@@ -16,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final UserService _userService = UserService();
   bool _isLoading = false;
+  String _selectedRole = 'student'; // Helper for debug login
 
   Future<void> _handleGoogleSignIn() async {
     try {
@@ -58,7 +59,8 @@ class _LoginScreenState extends State<LoginScreen> {
         
         // Login successful, navigate to main screen
         if (mounted) {
-          Navigator.pushReplacementNamed(context, '/main');
+          String userRole = response.data['role'] ?? _selectedRole;
+          Navigator.pushReplacementNamed(context, '/main', arguments: {'role': userRole});
         }
       } else {
         // Handle login error
@@ -140,11 +142,34 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 24),
 
+            DropdownButtonFormField<String>(
+              value: _selectedRole,
+              decoration: const InputDecoration(
+                labelText: 'Select Role (Demo)',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.admin_panel_settings),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'student', child: Text('Student')),
+                DropdownMenuItem(value: 'lecturer', child: Text('Lecturer')),
+                DropdownMenuItem(value: 'security', child: Text('Security Staff')),
+                DropdownMenuItem(value: 'head', child: Text('Head of Department')),
+              ],
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  setState(() {
+                    _selectedRole = newValue;
+                  });
+                }
+              },
+            ),
+            const SizedBox(height: 24),
+
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.pushReplacementNamed(context, '/main');
+                  Navigator.pushReplacementNamed(context, '/main', arguments: {'role': _selectedRole});
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
@@ -154,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 child: const Text(
-                  'Login',
+                  'Bypass Login (Demo)',
                   style: TextStyle(fontSize: 16, color: Colors.white),
                 ),
               ),
