@@ -7,63 +7,49 @@ class SecurityDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 180.0,
-            floating: false,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              title: const Text('Security Dashboard', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 18)),
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF2B2D42), Color(0xFF8D99AE)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: Center(
-                  child: Icon(Icons.security, size: 80, color: Colors.white.withOpacity(0.2)),
-                ),
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text('Security Dashboard', style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: -0.5)),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFFF26F21),
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(color: Colors.grey[200], height: 1.0),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Lab Status Overview', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+              const SizedBox(height: 16),
+              Row(
                 children: [
-                  const Text('Lab Status Overview', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(child: _buildStatusMetric('In Use', '4', Colors.green)),
-                      const SizedBox(width: 16),
-                      Expanded(child: _buildStatusMetric('Available', '12', Colors.blue)),
-                      const SizedBox(width: 16),
-                      Expanded(child: _buildStatusMetric('Maint.', '1', Colors.orange)),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  const Text('Current Sessions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  _buildRoomCard('Lab 301', 'IoT Practical', 'Locked', Colors.redAccent),
-                  const SizedBox(height: 12),
-                  _buildRoomCard('Lab 302', 'Circuit Design', 'In Use', Colors.green),
-                  const SizedBox(height: 24),
-                  const Text('Quick Actions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  _buildActionCard(context, 'Update Room Status', Icons.meeting_room, Colors.indigo, const SecurityRoomStatusScreen()),
-                  const SizedBox(height: 12),
-                  _buildActionCard(context, 'Timetable Viewer', Icons.calendar_view_week, Colors.teal, null),
+                  Expanded(child: _buildStatusMetric('In Use', '4', Colors.green)),
+                  const SizedBox(width: 16),
+                  Expanded(child: _buildStatusMetric('Available', '12', Colors.blue)),
+                  const SizedBox(width: 16),
+                  Expanded(child: _buildStatusMetric('Maint.', '1', Colors.orange)),
                 ],
               ),
-            ),
+              const SizedBox(height: 32),
+              const Text('Current Sessions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+              const SizedBox(height: 16),
+              _buildRoomCard('Lab 301', 'IoT Practical', 'Locked', Colors.redAccent),
+              const SizedBox(height: 12),
+              _buildRoomCard('Lab 302', 'Circuit Design', 'In Use', Colors.green),
+              const SizedBox(height: 32),
+              const Text('Quick Actions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+              const SizedBox(height: 16),
+              _buildActionCard(context, 'Update Room Status', 'Manage lab availability state', const SecurityRoomStatusScreen()),
+              const SizedBox(height: 12),
+              _buildActionCard(context, 'Timetable Viewer', 'Check daily class schedules', null),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -72,10 +58,9 @@ class SecurityDashboard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3), width: 2),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))],
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.2), width: 1),
       ),
       child: Column(
         children: [
@@ -91,28 +76,35 @@ class SecurityDashboard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 3))],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        leading: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
-          child: const Icon(Icons.room_preferences, color: Color(0xFF2B2D42)),
-        ),
-        title: Text(room, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(session),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-          child: Text(status, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12)),
-        ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(room, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18, letterSpacing: -0.5)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(status.toUpperCase(), style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1.0)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(session, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+        ],
       ),
     );
   }
 
-  Widget _buildActionCard(BuildContext context, String title, IconData icon, Color color, Widget? destination) {
+  Widget _buildActionCard(BuildContext context, String title, String subtitle, Widget? destination) {
     return InkWell(
       onTap: () {
         if (destination != null) {
@@ -120,20 +112,21 @@ class SecurityDashboard extends StatelessWidget {
         }
       },
       child: Container(
+        width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 3))],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[200]!),
         ),
-        child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          leading: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
-            child: Icon(icon, color: color),
-          ),
-          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+            const SizedBox(height: 4),
+            Text(subtitle, style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+          ],
         ),
       ),
     );

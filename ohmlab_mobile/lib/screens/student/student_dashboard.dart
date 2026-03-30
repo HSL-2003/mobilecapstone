@@ -9,47 +9,33 @@ class StudentDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 180.0,
-            floating: false,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              title: const Text('Student Dashboard', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 18)),
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFFFB8500), Color(0xFFFFB703)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: Center(
-                  child: Icon(Icons.school, size: 80, color: Colors.white.withOpacity(0.3)),
-                ),
-              ),
-            ),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text('Student Dashboard', style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: -0.5)),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFFF26F21),
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(color: Colors.grey[200], height: 1.0),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Upcoming Session', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+              const SizedBox(height: 16),
+              _buildSessionCard(),
+              const SizedBox(height: 32),
+              const Text('Quick Actions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+              const SizedBox(height: 16),
+              _buildActionGrid(context),
+            ],
           ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Upcoming Session', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  _buildSessionCard(),
-                  const SizedBox(height: 24),
-                  const Text('Quick Actions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  _buildActionGrid(context),
-                ],
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -58,54 +44,38 @@ class StudentDashboard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!),
       ),
-      padding: const EdgeInsets.all(20),
-      child: Row(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: const Color(0xFFE2EAFB), borderRadius: BorderRadius.circular(12)),
-            child: const Icon(Icons.science, color: Color(0xFF4361EE), size: 32),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Circuit Design Practice', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                const SizedBox(height: 4),
-                Text('Lab 302 • Today, 14:00 PM', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-              ],
-            ),
-          ),
-          const Icon(Icons.chevron_right, color: Colors.grey),
+          const Text('TODAY • 14:00 PM', style: TextStyle(color: Color(0xFFF26F21), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+          const SizedBox(height: 8),
+          const Text('Circuit Design Practice', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, letterSpacing: -0.5)),
+          const SizedBox(height: 8),
+          Text('Lab 302', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
         ],
       ),
     );
   }
 
   Widget _buildActionGrid(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      childAspectRatio: 1.1,
+    return Column(
       children: [
-        _buildActionCard(context, 'Timetable', Icons.calendar_month, Colors.deepPurple, const StudentScheduleScreen()),
-        _buildActionCard(context, 'Report Incident', Icons.report_problem, Colors.redAccent, const StudentReportIncidentScreen()),
-        _buildActionCard(context, 'Lab Instructions', Icons.assignment, Colors.green, const StudentLabInstructionsScreen()),
-        _buildActionCard(context, 'Lab Rules', Icons.rule, Colors.blueAccent, null),
+        _buildActionCard(context, 'Timetable', 'View your weekly schedule', const StudentScheduleScreen()),
+        const SizedBox(height: 12),
+        _buildActionCard(context, 'Report Incident', 'Log issues related to equipment', const StudentReportIncidentScreen()),
+        const SizedBox(height: 12),
+        _buildActionCard(context, 'Lab Instructions', 'Access practical documents', const StudentLabInstructionsScreen()),
+        const SizedBox(height: 12),
+        _buildActionCard(context, 'Lab Rules', 'Read laboratory compliance guidelines', null),
       ],
     );
   }
 
-  Widget _buildActionCard(BuildContext context, String title, IconData icon, Color color, Widget? destination) {
+  Widget _buildActionCard(BuildContext context, String title, String subtitle, Widget? destination) {
     return InkWell(
       onTap: () {
         if (destination != null) {
@@ -113,21 +83,20 @@ class StudentDashboard extends StatelessWidget {
         }
       },
       child: Container(
+        width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 4))],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[200]!),
         ),
+        padding: const EdgeInsets.all(20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
-              child: Icon(icon, color: color, size: 32),
-            ),
-            const SizedBox(height: 12),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: Colors.black87)),
+            const SizedBox(height: 4),
+            Text(subtitle, style: TextStyle(color: Colors.grey[500], fontSize: 13)),
           ],
         ),
       ),

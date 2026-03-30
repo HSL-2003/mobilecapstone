@@ -9,105 +9,92 @@ class HeadDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 180.0,
-            floating: false,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              title: const Text('Head of Department', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16)),
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFFBA1826), Color(0xFF9D0208)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: Center(
-                  child: Icon(Icons.account_balance, size: 80, color: Colors.white.withOpacity(0.2)),
-                ),
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text('Head of Department', style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: -0.5)),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFFF26F21),
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(color: Colors.grey[200], height: 1.0),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Overview', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+              const SizedBox(height: 16),
+              Row(
                 children: [
-                  const Text('Overview', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(child: _buildStatCard('Active Classes', '24', Icons.class_)),
-                      const SizedBox(width: 16),
-                      Expanded(child: _buildStatCard('Pending Approvals', '5', Icons.pending_actions)),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  const Text('Management Tools', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  _buildListAction(context, 'Schedule Approvals', 'Approve lecturer lab schedules', Icons.edit_calendar, Colors.orange, const HeadScheduleApprovalScreen()),
-                  const SizedBox(height: 12),
-                  _buildListAction(context, 'Lecturer Assignment', 'Assign lecturers to classes', Icons.people, Colors.blue, const HeadLecturerAssignmentScreen()),
-                  const SizedBox(height: 12),
-                  _buildListAction(context, 'Class & Course Management', 'Update practical regulations', Icons.library_books, Colors.green, const HeadClassManagementScreen()),
-                  const SizedBox(height: 12),
-                  _buildListAction(context, 'Incident Reports', 'Review escalated incident reports', Icons.warning, Colors.red, null),
+                  Expanded(child: _buildStatCard('Active Classes', '24')),
+                  const SizedBox(width: 16),
+                  Expanded(child: _buildStatCard('Pending Approvals', '5')),
                 ],
               ),
-            ),
+              const SizedBox(height: 32),
+              const Text('Management Tools', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+              const SizedBox(height: 16),
+              _buildListAction(context, 'Schedule Approvals', 'Approve lecturer lab schedules', const HeadScheduleApprovalScreen()),
+              const SizedBox(height: 12),
+              _buildListAction(context, 'Lecturer Assignment', 'Assign lecturers to classes', const HeadLecturerAssignmentScreen()),
+              const SizedBox(height: 12),
+              _buildListAction(context, 'Class & Course Management', 'Update practical regulations', const HeadClassManagementScreen()),
+              const SizedBox(height: 12),
+              _buildListAction(context, 'Incident Reports', 'Review escalated incident reports', null),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon) {
+  Widget _buildStatCard(String title, String value) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 4))],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: const Color(0xFFBA1826)),
-          const SizedBox(height: 12),
-          Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text(title, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+          Text(value, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFFF26F21), letterSpacing: -1.0)),
+          const SizedBox(height: 8),
+          Text(title, style: TextStyle(color: Colors.grey[600], fontSize: 13, fontWeight: FontWeight.w600)),
         ],
       ),
     );
   }
 
-  Widget _buildListAction(BuildContext context, String title, String subtitle, IconData icon, Color color, Widget? destination) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 3))],
-      ),
-      child: ListTile(
-        onTap: () {
-          if (destination != null) {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => destination));
-          }
-        },
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        leading: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, color: color)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+  Widget _buildListAction(BuildContext context, String title, String subtitle, Widget? destination) {
+    return InkWell(
+      onTap: () {
+        if (destination != null) {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => destination));
+        }
+      },
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+            const SizedBox(height: 4),
+            Text(subtitle, style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+          ],
+        ),
       ),
     );
   }
