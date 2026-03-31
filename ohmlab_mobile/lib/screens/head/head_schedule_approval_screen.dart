@@ -7,7 +7,16 @@ class HeadScheduleApprovalScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      appBar: AppBar(title: const Text('Schedule Approvals'), backgroundColor: const Color(0xFFBA1826), foregroundColor: Colors.white),
+      appBar: AppBar(
+        title: const Text('Schedule Approvals', style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: -0.5)),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFFF26F21),
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(color: Colors.grey[200], height: 1.0),
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -21,7 +30,7 @@ class HeadScheduleApprovalScreen extends StatelessWidget {
 
   Widget _buildApprovalCard(BuildContext context, String course, String lecturer, String schedule) {
     return Container(
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 3))]),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey[200]!)),
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -34,9 +43,9 @@ class HeadScheduleApprovalScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: OutlinedButton(onPressed: (){}, style: OutlinedButton.styleFrom(foregroundColor: Colors.red), child: const Text('Reject'))),
+              Expanded(child: OutlinedButton(onPressed: (){}, style: OutlinedButton.styleFrom(foregroundColor: Colors.grey[800], side: BorderSide(color: Colors.grey[300]!)), child: const Text('Reject'))),
               const SizedBox(width: 16),
-              Expanded(child: ElevatedButton(onPressed: (){}, style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white), child: const Text('Approve'))),
+              Expanded(child: ElevatedButton(onPressed: (){}, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF26F21), foregroundColor: Colors.white, elevation: 0), child: const Text('Approve'))),
             ],
           )
         ],

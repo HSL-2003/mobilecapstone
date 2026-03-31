@@ -9,13 +9,14 @@ class LecturerSessionManagementScreen extends StatelessWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('IoT Class SE1601 - Lab 3', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          backgroundColor: const Color(0xFF4361EE),
-          foregroundColor: Colors.white,
+          title: const Text('IoT Class SE1601 - Lab 3', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, letterSpacing: -0.5)),
+          backgroundColor: Colors.white,
+          foregroundColor: const Color(0xFFF26F21),
+          elevation: 0,
           bottom: const TabBar(
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white60,
-            indicatorColor: Colors.white,
+            labelColor: Color(0xFFF26F21),
+            unselectedLabelColor: Colors.black54,
+            indicatorColor: Color(0xFFF26F21),
             tabs: [
               Tab(text: 'Equipment'),
               Tab(text: 'Groups'),
@@ -72,7 +73,7 @@ class _EquipmentTab extends StatelessWidget {
       title: Text(title, style: TextStyle(decoration: isChecked ? TextDecoration.lineThrough : null)),
       controlAffinity: ListTileControlAffinity.leading,
       contentPadding: EdgeInsets.zero,
-      activeColor: const Color(0xFF4361EE),
+      activeColor: const Color(0xFFF26F21),
     );
   }
 }
@@ -100,8 +101,8 @@ class _GroupsTab extends StatelessWidget {
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(subtitle, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
         children: [
-          ListTile(leading: const Icon(Icons.person), title: const Text('Nguyen Van A (Leader)'), trailing: Checkbox(value: true, onChanged: (v){}, activeColor: const Color(0xFF4361EE))),
-          ListTile(leading: const Icon(Icons.person), title: const Text('Le Thi B'), trailing: Checkbox(value: true, onChanged: (v){}, activeColor: const Color(0xFF4361EE))),
+          ListTile(leading: const Icon(Icons.person), title: const Text('Nguyen Van A (Leader)'), trailing: Checkbox(value: true, onChanged: (v){}, activeColor: const Color(0xFFF26F21))),
+          ListTile(leading: const Icon(Icons.person), title: const Text('Le Thi B'), trailing: Checkbox(value: true, onChanged: (v){}, activeColor: const Color(0xFFF26F21))),
         ],
       ),
     );
@@ -145,7 +146,7 @@ class _GradingTab extends StatelessWidget {
             const SizedBox(width: 16),
             ElevatedButton(
               onPressed: () {},
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4361EE), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24)),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF26F21), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24)),
               child: const Text('Save Grade'),
             )
           ],

@@ -40,17 +40,17 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
       appBar: AppBar(
         title: const Text('My Schedule', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
-        backgroundColor: const Color(0xFFFB8500),
+        backgroundColor: const Color(0xFFF26F21),
         foregroundColor: Colors.white,
         elevation: 0,
       ),
       body: Column(
         children: [
           Container(
-            color: const Color(0xFFFB8500),
+            color: const Color(0xFFF26F21),
             padding: const EdgeInsets.only(bottom: 16),
             child: CalendarSlider(
-              selectedDateColor: const Color(0xFFFB8500),
+              selectedDateColor: const Color(0xFFF26F21),
               selectedTileBackgroundColor: Colors.white,
               monthYearButtonBackgroundColor: Colors.white24,
               monthYearTextColor: Colors.white,
@@ -110,32 +110,32 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              color: Color(0xFFFFF3E0),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            decoration: BoxDecoration(
+              color: Colors.orange.withOpacity(0.1),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.access_time, size: 18, color: Color(0xFFFB8500)),
+                    const Icon(Icons.access_time, size: 18, color: Color(0xFFF26F21)),
                     const SizedBox(width: 8),
                     Text(
                       event['time']!,
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFFB8500)),
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFF26F21)),
                     ),
                   ],
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
+                    color: Colors.orange.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     event['status']!,
-                    style: const TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold),
+                    style: const TextStyle(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -175,8 +175,8 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
                       // Navigate to details / instructions
                     },
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFFB8500),
-                      side: const BorderSide(color: Color(0xFFFB8500)),
+                      foregroundColor: const Color(0xFFF26F21),
+                      side: const BorderSide(color: Color(0xFFF26F21)),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     child: const Text('View Practical Instructions'),

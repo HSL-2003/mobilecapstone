@@ -18,10 +18,14 @@ class _StudentReportIncidentScreenState extends State<StudentReportIncidentScree
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Report Incident', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.redAccent,
-        foregroundColor: Colors.white,
+        title: const Text('Report Incident', style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: -0.5)),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFFF26F21),
         elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(color: Colors.grey[200], height: 1.0),
+        ),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -29,26 +33,21 @@ class _StudentReportIncidentScreenState extends State<StudentReportIncidentScree
           children: [
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.redAccent,
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
-                boxShadow: [
-                  BoxShadow(color: Colors.redAccent.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5)),
-                ],
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: Color(0xFFF26F21),
               ),
               child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.warning_amber_rounded, size: 48, color: Colors.white),
-                  SizedBox(height: 16),
                   Text(
-                    'Report a Issue',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                    'Report an Issue',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: -0.5),
                   ),
                   SizedBox(height: 8),
                   Text(
                     'Did you find broken equipment or encounter a safety hazard? Please let us know immediately.',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                    style: TextStyle(color: Colors.white, fontSize: 14),
                   ),
                 ],
               ),
@@ -124,11 +123,11 @@ class _StudentReportIncidentScreenState extends State<StudentReportIncidentScree
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.redAccent,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          backgroundColor: const Color(0xFFF26F21),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           elevation: 0,
                         ),
-                        child: const Text('Submit Report', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                        child: const Text('SUBMIT REPORT', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 1.0)),
                       ),
                     ),
                   ],

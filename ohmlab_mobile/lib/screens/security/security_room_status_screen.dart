@@ -9,10 +9,10 @@ class SecurityRoomStatusScreen extends StatefulWidget {
 
 class _SecurityRoomStatusScreenState extends State<SecurityRoomStatusScreen> {
   final List<Map<String, dynamic>> _rooms = [
-    {'name': 'Lab 301', 'status': 'Available', 'color': Colors.blue},
-    {'name': 'Lab 302', 'status': 'In Use', 'color': Colors.green},
-    {'name': 'Lab 303', 'status': 'Locked', 'color': Colors.redAccent},
-    {'name': 'Lab 304', 'status': 'Maintenance', 'color': Colors.orange},
+    {'name': 'Lab 301', 'status': 'Available', 'color': const Color(0xFFF26F21)},
+    {'name': 'Lab 302', 'status': 'In Use', 'color': const Color(0xFFF26F21)},
+    {'name': 'Lab 303', 'status': 'Locked', 'color': const Color(0xFFF26F21)},
+    {'name': 'Lab 304', 'status': 'Maintenance', 'color': const Color(0xFFF26F21)},
   ];
 
   @override
@@ -20,9 +20,14 @@ class _SecurityRoomStatusScreenState extends State<SecurityRoomStatusScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Update Room Status', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF2B2D42),
-        foregroundColor: Colors.white,
+        title: const Text('Update Room Status', style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: -0.5)),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFFF26F21),
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(color: Colors.grey[200], height: 1.0),
+        ),
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(20),
@@ -34,7 +39,7 @@ class _SecurityRoomStatusScreenState extends State<SecurityRoomStatusScreen> {
             decoration: BoxDecoration(
               color: Colors.white, 
               borderRadius: BorderRadius.circular(16), 
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 3))]
+              border: Border.all(color: Colors.grey[200]!)
             ),
             child: ListTile(
               contentPadding: const EdgeInsets.all(16),
@@ -51,10 +56,10 @@ class _SecurityRoomStatusScreenState extends State<SecurityRoomStatusScreen> {
                   setState(() {
                     room['status'] = newStatus;
                     switch(newStatus) {
-                      case 'Available': room['color'] = Colors.blue; break;
-                      case 'In Use': room['color'] = Colors.green; break;
-                      case 'Locked': room['color'] = Colors.redAccent; break;
-                      case 'Maintenance': room['color'] = Colors.orange; break;
+                      case 'Available': room['color'] = const Color(0xFFF26F21); break;
+                      case 'In Use': room['color'] = const Color(0xFFF26F21); break;
+                      case 'Locked': room['color'] = const Color(0xFFF26F21); break;
+                      case 'Maintenance': room['color'] = const Color(0xFFF26F21); break;
                     }
                   });
                 },

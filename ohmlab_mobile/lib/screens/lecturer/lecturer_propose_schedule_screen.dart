@@ -18,10 +18,14 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Propose Schedule', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF4361EE),
-        foregroundColor: Colors.white,
+        title: const Text('Propose Schedule', style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: -0.5)),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFFF26F21),
         elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(color: Colors.grey[200], height: 1.0),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -39,8 +43,8 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
             ListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Preferred Date'),
-              subtitle: Text('${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF4361EE))),
-              trailing: const Icon(Icons.calendar_today, color: Color(0xFF4361EE)),
+              subtitle: Text('${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFF26F21))),
+              trailing: const Icon(Icons.calendar_today, color: Color(0xFFF26F21)),
               onTap: () async {
                 final date = await showDatePicker(context: context, initialDate: _selectedDate, firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 90)));
                 if (date != null) setState(() => _selectedDate = date);
@@ -67,12 +71,12 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
               child: const Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                  Icon(Icons.info_outline, color: Color(0xFFF26F21), size: 20),
                   SizedBox(width: 8),
-                  Expanded(child: Text('System will automatically generate groups and assign leaders based on random selection.', style: TextStyle(color: Colors.blue, fontSize: 12))),
+                  Expanded(child: Text('System will automatically generate groups and assign leaders based on random selection.', style: TextStyle(color: Color(0xFFF26F21), fontSize: 12))),
                 ],
               ),
             ),
@@ -85,7 +89,7 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Schedule proposal submitted to Head of Department.'), backgroundColor: Colors.green));
                   Navigator.pop(context);
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4361EE), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF26F21), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                 child: const Text('Submit Proposal', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
               ),
             ),

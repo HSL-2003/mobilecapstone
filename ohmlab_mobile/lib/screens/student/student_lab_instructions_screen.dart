@@ -9,13 +9,14 @@ class StudentLabInstructionsScreen extends StatelessWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Circuit Design Practice', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          backgroundColor: const Color(0xFFFB8500),
-          foregroundColor: Colors.white,
+          title: const Text('Circuit Design Practice', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, letterSpacing: -0.5)),
+          backgroundColor: Colors.white,
+          foregroundColor: const Color(0xFFF26F21),
+          elevation: 0,
           bottom: const TabBar(
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white60,
-            indicatorColor: Colors.white,
+            labelColor: Color(0xFFF26F21),
+            unselectedLabelColor: Colors.black54,
+            indicatorColor: Color(0xFFF26F21),
             tabs: [
               Tab(text: 'Instructions'),
               Tab(text: 'My Group'),
@@ -93,10 +94,10 @@ class _GroupTab extends StatelessWidget {
 
   Widget _buildMember(String name, String rollId, bool isLeader) {
     return ListTile(
-      leading: CircleAvatar(backgroundColor: const Color(0xFFFB8500), child: Text(name[0], style: const TextStyle(color: Colors.white))),
+      leading: CircleAvatar(backgroundColor: const Color(0xFFF26F21), child: Text(name[0], style: const TextStyle(color: Colors.white))),
       title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text(rollId),
-      trailing: isLeader ? const Chip(label: Text('Leader', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)), backgroundColor: Color(0xFFFFD166)) : null,
+      trailing: isLeader ? const Chip(label: Text('Leader', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white)), backgroundColor: Color(0xFFF26F21), side: BorderSide.none) : null,
       tileColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey[200]!)),
     );
@@ -144,7 +145,7 @@ class _SubmissionTab extends StatelessWidget {
               onPressed: () {},
               icon: const Icon(Icons.cloud_upload),
               label: const Text('Submit Report'),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFB8500), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF26F21), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
             ),
           )
         ],
