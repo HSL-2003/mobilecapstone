@@ -11,12 +11,10 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final usernameCtrl = TextEditingController();
-  final passwordCtrl = TextEditingController();
+  final emailCtrl = TextEditingController();
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final UserService _userService = UserService();
   bool _isLoading = false;
-  String _selectedRole = 'student'; // Helper for debug login
 
   Future<void> _handleGoogleSignIn() async {
     try {
@@ -59,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
         
         // Login successful, navigate to main screen
         if (mounted) {
-          String userRole = response.data['role'] ?? _selectedRole;
+          String userRole = response.data['role'] ?? 'student'; // Fallback nếu API không trả về
           Navigator.pushReplacementNamed(context, '/main', arguments: {'role': userRole});
         }
       } else {
@@ -122,54 +120,50 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 40),
 
             TextField(
-              controller: usernameCtrl,
+              controller: emailCtrl,
               decoration: const InputDecoration(
-                labelText: 'Username',
+                labelText: 'Email',
                 border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.person),
+                prefixIcon: Icon(Icons.email),
               ),
-            ),
-            const SizedBox(height: 16),
-
-            TextField(
-              controller: passwordCtrl,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.lock),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            DropdownButtonFormField<String>(
-              value: _selectedRole,
-              decoration: const InputDecoration(
-                labelText: 'Select Role (Demo)',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.admin_panel_settings),
-              ),
-              items: const [
-                DropdownMenuItem(value: 'student', child: Text('Student')),
-                DropdownMenuItem(value: 'lecturer', child: Text('Lecturer')),
-                DropdownMenuItem(value: 'security', child: Text('Security Staff')),
-                DropdownMenuItem(value: 'head', child: Text('Head of Department')),
-              ],
-              onChanged: (String? newValue) {
-                if (newValue != null) {
-                  setState(() {
-                    _selectedRole = newValue;
-                  });
-                }
-              },
+              keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 24),
 
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pushReplacementNamed(context, '/main', arguments: {'role': _selectedRole});
+                onPressed: _isLoading ? null : () async {
+                  setState(() => _isLoading = true);
+                  
+                  // Chuẩn bị payload trực tiếp tới API test login
+                  try {
+                    final response = await _userService.loginTest(emailCtrl.text.trim());
+                    
+                    if (response.status == 200 || response.status == 201) {
+                      if (context.mounted) {
+                        String userRole = 'student'; // Mặc định
+                        if (response.data is Map && response.data['role'] != null) {
+                          userRole = response.data['role'];
+                        }
+                        Navigator.pushReplacementNamed(context, '/main', arguments: {'role': userRole});
+                      }
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Tài khoản không tồn tại, vui lòng liên hệ admin cung cấp tài khoản'), backgroundColor: Colors.red, duration: Duration(seconds: 4)),
+                        );
+                      }
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Tài khoản không tồn tại, vui lòng liên hệ admin cung cấp tài khoản'), backgroundColor: Colors.red, duration: Duration(seconds: 4)),
+                      );
+                    }
+                  } finally {
+                    if (context.mounted) setState(() => _isLoading = false);
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
@@ -178,10 +172,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text(
-                  'Login',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
-                ),
+                child: _isLoading 
+                    ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text(
+                        'Login',
+                        style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
               ),
             ),
 

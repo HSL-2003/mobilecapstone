@@ -19,6 +19,14 @@ class UserService {
     return ApiResponse.fromResponse(response);
   }
 
+  Future<ApiResponse> loginTest(String email) async {
+    final response = await _apiService.defaultDio.post('/api/user/logintest', queryParameters: {'email': email});
+    if (response.data is Map<String, dynamic> && response.data['token'] != null) {
+      await _saveToken(response.data['token']);
+    }
+    return ApiResponse.fromResponse(response);
+  }
+
   Future<ApiResponse> getCurrentUser() async {
     final response = await _apiService.skipAllNotiDio.get('/api/user/current-user');
     return ApiResponse.fromResponse(response);
