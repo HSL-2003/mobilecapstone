@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -13,22 +14,59 @@ class UserService {
 
   Future<ApiResponse> loginGoogle(Map<String, dynamic> data) async {
     final response = await _apiService.defaultDio.post('/api/user/loginmail', data: data);
-    if (response.data is Map<String, dynamic> && response.data['token'] != null) {
-      await _saveToken(response.data['token']);
-    }
+    _extractAndSaveToken(response.data);
     return ApiResponse.fromResponse(response);
   }
 
   Future<ApiResponse> loginTest(String email) async {
     final response = await _apiService.defaultDio.post('/api/user/logintest', queryParameters: {'email': email});
-    if (response.data is Map<String, dynamic> && response.data['token'] != null) {
-      await _saveToken(response.data['token']);
-    }
+    _extractAndSaveToken(response.data);
     return ApiResponse.fromResponse(response);
+  }
+
+  void _extractAndSaveToken(dynamic responseData) {
+    if (responseData is Map<String, dynamic>) {
+      if (responseData['token'] != null) {
+        _saveToken(responseData['token']);
+        _saveUserLocal(responseData);
+      } else if (responseData['data'] is Map<String, dynamic> && responseData['data']['token'] != null) {
+        _saveToken(responseData['data']['token']);
+        _saveUserLocal(responseData['data']);
+      }
+    }
+  }
+
+  Future<void> _saveUserLocal(Map<String, dynamic> userData) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userToSave = Map<String, dynamic>.from(userData);
+      userToSave.remove('token');
+      await prefs.setString('currentUserData', jsonEncode(userToSave)); 
+    } catch(e) {
+      print('Error saving user: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>?> getCurrentUserLocal() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? userDataString = prefs.getString('currentUserData');
+      if (userDataString != null) {
+        return jsonDecode(userDataString);
+      }
+    } catch(e) {
+      print('Error parsing user: $e');
+    }
+    return null;
   }
 
   Future<ApiResponse> getCurrentUser() async {
     final response = await _apiService.skipAllNotiDio.get('/api/user/current-user');
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> getLecturerTeams(String lecturerId) async {
+    final response = await _apiService.defaultDio.get('/api/team/lecturer/$lecturerId');
     return ApiResponse.fromResponse(response);
   }
 

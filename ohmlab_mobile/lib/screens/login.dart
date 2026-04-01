@@ -33,12 +33,9 @@ class _LoginScreenState extends State<LoginScreen> {
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       
       // Prepare data for API call
+      // Prepare data for API call (Chỉ gửi googleId theo yêu cầu backend)
       final Map<String, dynamic> loginData = {
-        'email': googleUser.email,
-        'name': googleUser.displayName,
         'googleId': googleUser.id,
-        'accessToken': googleAuth.accessToken,
-        'idToken': googleAuth.idToken,
       };
 
       // Call the loginGoogle API
@@ -57,41 +54,61 @@ class _LoginScreenState extends State<LoginScreen> {
         
         // Login successful, navigate to main screen
         if (mounted) {
-          String userRole = response.data['role'] ?? 'student'; // Fallback nếu API không trả về
+          String userRole = 'student';
+          final dynamic payload = response.data;
+          if (payload is Map) {
+            dynamic roleData;
+            if (payload.containsKey('data') && payload['data'] is Map) {
+              roleData = payload['data']['role'] ?? payload['data']['roleName'] ?? payload['data']['userRoleName'] ?? payload['data']['userRole'];
+            }
+            roleData ??= payload['role'] ?? payload['roleName'] ?? payload['userRoleName'] ?? payload['userRole'];
+            
+            if (roleData == null) {
+              try {
+                final profileResponse = await _userService.getCurrentUser();
+                if (profileResponse.status == 200 || profileResponse.status == 201) {
+                  final pData = profileResponse.data;
+                  if (pData is Map) {
+                    if (pData.containsKey('data') && pData['data'] is Map) {
+                      roleData = pData['data']['userRoleName'] ?? pData['data']['role'];
+                    } else {
+                      roleData = pData['userRoleName'] ?? pData['role'];
+                    }
+                  }
+                }
+              } catch(e) {
+                print("Lỗi fallback lấy role (Google): $e");
+              }
+            }
+
+            if (roleData != null) {
+              String rawRole = roleData.toString().toLowerCase();
+              if (rawRole.contains('lecturer')) userRole = 'lecturer';
+              else if (rawRole.contains('head')) userRole = 'head';
+              else if (rawRole.contains('security')) userRole = 'security';
+            }
+          }
           Navigator.pushReplacementNamed(context, '/main', arguments: {'role': userRole});
         }
       } else {
         // Handle login error
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(response.message ?? 'Đăng nhập thất bại'),
+            const SnackBar(
+              content: Text('Tài khoản không tồn tại, vui lòng liên hệ admin cung cấp tài khoản'),
               backgroundColor: Colors.red,
+              duration: Duration(seconds: 4),
             ),
           );
         }
       }
     } catch (error) {
-      print('Google Sign-In Error: $error');
-      String errorMessage = 'Lỗi đăng nhập Google';
-      
-      // Check for ApiException error code 10 (DEVELOPER_ERROR)
-      if (error.toString().contains('ApiException: 10') || 
-          error.toString().contains('DEVELOPER_ERROR')) {
-        errorMessage = 'Lỗi cấu hình Google Sign-In. Vui lòng kiểm tra:\n'
-            '1. SHA-1 fingerprint đã được đăng ký trong Firebase Console\n'
-            '2. OAuth Client ID đúng trong Google Cloud Console\n'
-            '3. Package name khớp: com.fuhcm.ohmlab';
-      } else if (error.toString().contains('sign_in_failed')) {
-        errorMessage = 'Đăng nhập Google thất bại. Vui lòng thử lại.';
-      }
-      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
+          const SnackBar(
+            content: Text('Tài khoản không tồn tại, vui lòng liên hệ admin cung cấp tài khoản'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
+            duration: Duration(seconds: 4),
           ),
         );
       }
@@ -143,8 +160,40 @@ class _LoginScreenState extends State<LoginScreen> {
                     if (response.status == 200 || response.status == 201) {
                       if (context.mounted) {
                         String userRole = 'student'; // Mặc định
-                        if (response.data is Map && response.data['role'] != null) {
-                          userRole = response.data['role'];
+                        final dynamic payload = response.data;
+                        if (payload is Map) {
+                          dynamic roleData;
+                          if (payload.containsKey('data') && payload['data'] is Map) {
+                            roleData = payload['data']['role'] ?? payload['data']['roleName'] ?? payload['data']['userRoleName'] ?? payload['data']['userRole'];
+                          }
+                          roleData ??= payload['role'] ?? payload['roleName'] ?? payload['userRoleName'] ?? payload['userRole'];
+                          
+                          // Lấy lại Role từ /current-user nếu endpoint đăng nhập không trả về
+                          if (roleData == null) {
+                            try {
+                              final profileResponse = await _userService.getCurrentUser();
+                              if (profileResponse.status == 200 || profileResponse.status == 201) {
+                                final pData = profileResponse.data;
+                                if (pData is Map) {
+                                  if (pData.containsKey('data') && pData['data'] is Map) {
+                                    roleData = pData['data']['userRoleName'] ?? pData['data']['role'];
+                                  } else {
+                                    roleData = pData['userRoleName'] ?? pData['role'];
+                                  }
+                                }
+                              }
+                            } catch(e) {
+                              print("Không thể lấy /current-user để tìm Role fallback: $e");
+                            }
+                          }
+
+                          if (roleData != null) {
+                            String rawRole = roleData.toString().toLowerCase();
+                            if (rawRole.contains('lecturer')) userRole = 'lecturer';
+                            else if (rawRole.contains('head')) userRole = 'head';
+                            else if (rawRole.contains('security')) userRole = 'security';
+                            else userRole = 'student';
+                          }
                         }
                         Navigator.pushReplacementNamed(context, '/main', arguments: {'role': userRole});
                       }
