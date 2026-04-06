@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'head_class_management_screen.dart';
 import 'head_lecturer_assignment_screen.dart';
 import 'head_schedule_approval_screen.dart';
+import '../common/daily_schedule_screen.dart';
 
 class HeadDashboard extends StatelessWidget {
   const HeadDashboard({super.key});
@@ -30,7 +31,14 @@ class HeadDashboard extends StatelessWidget {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(child: _buildStatCard('Active Classes', '24')),
+                   Expanded(
+                    child: InkWell(
+                      onTap: () {
+                         Navigator.push(context, MaterialPageRoute(builder: (_) => const DailyScheduleScreen()));
+                      },
+                      child: _buildStatCard('Classes Today', 'View'),
+                    ),
+                  ),
                   const SizedBox(width: 16),
                   Expanded(child: _buildStatCard('Pending Approvals', '5')),
                 ],
@@ -38,6 +46,8 @@ class HeadDashboard extends StatelessWidget {
               const SizedBox(height: 32),
               const Text('Management Tools', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
               const SizedBox(height: 16),
+              _buildListAction(context, 'Daily Report (Slots)', 'View today\'s teaching slots and classes', const DailyScheduleScreen()),
+              const SizedBox(height: 12),
               _buildListAction(context, 'Schedule Approvals', 'Approve lecturer lab schedules', const HeadScheduleApprovalScreen()),
               const SizedBox(height: 12),
               _buildListAction(context, 'Lecturer Assignment', 'Assign lecturers to classes', const HeadLecturerAssignmentScreen()),

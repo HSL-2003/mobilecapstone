@@ -70,6 +70,16 @@ class UserService {
     return ApiResponse.fromResponse(response);
   }
 
+  Future<ApiResponse> getTeamUsers(int teamId) async {
+    final response = await _apiService.defaultDio.get('/api/teamuser/team/$teamId');
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> getTeamUserById(int id) async {
+    final response = await _apiService.skipNotiDio.get('/api/teamuser/$id');
+    return ApiResponse.fromResponse(response);
+  }
+
   Future<void> _saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('accessToken', token);

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'student_schedule_screen.dart';
-import 'student_report_incident_screen.dart';
+import '../common/common_report_incident_screen.dart';
 import 'student_lab_instructions_screen.dart';
+import '../common/daily_schedule_screen.dart';
 
 class StudentDashboard extends StatelessWidget {
   const StudentDashboard({super.key});
@@ -64,9 +65,11 @@ class StudentDashboard extends StatelessWidget {
   Widget _buildActionGrid(BuildContext context) {
     return Column(
       children: [
+        _buildActionCard(context, 'Today\'s Schedule', 'View today\'s teaching slots and classes', const DailyScheduleScreen()),
+        const SizedBox(height: 12),
         _buildActionCard(context, 'Timetable', 'View your weekly schedule', const StudentScheduleScreen()),
         const SizedBox(height: 12),
-        _buildActionCard(context, 'Report Incident', 'Log issues related to equipment', const StudentReportIncidentScreen()),
+        _buildActionCard(context, 'Report Incident', 'Log issues related to equipment', const CommonReportIncidentScreen()),
         const SizedBox(height: 12),
         _buildActionCard(context, 'Lab Instructions', 'Access practical documents', const StudentLabInstructionsScreen()),
         const SizedBox(height: 12),

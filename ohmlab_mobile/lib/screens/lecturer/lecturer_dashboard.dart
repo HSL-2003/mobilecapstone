@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'lecturer_propose_schedule_screen.dart';
 import 'lecturer_session_management_screen.dart';
+import '../common/daily_schedule_screen.dart';
+import '../common/common_report_incident_screen.dart';
 import 'package:ohm_lab_mobile/services/user_services.dart';
 
 class LecturerDashboard extends StatefulWidget {
@@ -145,9 +147,24 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
         final String teamName = team['teamName'] ?? team['name'] ?? 'Unknown Group'; // Hoặc 'subjectCode'
         final String details = (team['subjectName'] ?? team['description'] ?? 'Lecturer Team').toString();
         
+        // Cố gắng parse ID từ bất kỳ field nào có thể là id
+        final rawId = team['id'] ?? team['teamId'] ?? team['ID'] ?? team['TeamID'];
+        
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
-          child: _buildActionCard(context, teamName, details, null),
+          child: _buildActionCard(
+            context, 
+            teamName, 
+            details, 
+            LecturerSessionManagementScreen(
+              teamData: {
+                "id": rawId,
+                "teamId": rawId, 
+                "teamName": teamName,
+                ...((team is Map) ? Map<String, dynamic>.from(team) : {})
+              }
+            )
+          ),
         );
       }).toList(),
     );
@@ -182,11 +199,13 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
   Widget _buildActionGrid(BuildContext context) {
     return Column(
       children: [
+        _buildActionCard(context, 'Today\'s Schedule', 'View all lab slots and classes for today', const DailyScheduleScreen()),
+        const SizedBox(height: 12),
         _buildActionCard(context, 'My Classes', 'View the list of assigned classes', null),
         const SizedBox(height: 12),
         _buildActionCard(context, 'Equipment Check', 'Verify lab tools availability', const LecturerSessionManagementScreen()),
         const SizedBox(height: 12),
-        _buildActionCard(context, 'Incident Reports', 'Review student incident logs', null),
+        _buildActionCard(context, 'Report Incident', 'Log issues related to equipment', const CommonReportIncidentScreen()),
         const SizedBox(height: 12),
         _buildActionCard(context, 'Timetable', 'View scheduled practicals', null),
       ],
