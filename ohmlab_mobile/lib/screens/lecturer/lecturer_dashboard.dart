@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'lecturer_propose_schedule_screen.dart';
 import 'lecturer_session_management_screen.dart';
+import 'lecturer_equipment_history_screen.dart';
 import '../common/daily_schedule_screen.dart';
 import '../common/common_report_incident_screen.dart';
+import '../common/common_report_history_screen.dart';
 import 'package:ohm_lab_mobile/services/user_services.dart';
 
 class LecturerDashboard extends StatefulWidget {
@@ -208,6 +210,12 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
         _buildActionCard(context, 'Report Incident', 'Log issues related to equipment', const CommonReportIncidentScreen()),
         const SizedBox(height: 12),
         _buildActionCard(context, 'Timetable', 'View scheduled practicals', null),
+        const SizedBox(height: 32),
+        const Text('History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+        const SizedBox(height: 16),
+        _buildActionCard(context, 'Report History', 'View history of submitted reports', const CommonReportHistoryScreen()),
+        const SizedBox(height: 12),
+        _buildActionCard(context, 'Equipment History', 'View history of lab equipment usage', const LecturerEquipmentHistoryScreen()),
       ],
     );
   }
