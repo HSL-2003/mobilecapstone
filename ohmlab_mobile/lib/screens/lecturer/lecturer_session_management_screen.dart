@@ -15,20 +15,40 @@ class LecturerSessionManagementScreen extends StatelessWidget {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
+        backgroundColor: const Color(0xFFF8F9FA),
         appBar: AppBar(
-          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16, letterSpacing: -0.5)),
+          title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: -0.5, color: Color(0xFF1E1E1E))),
           backgroundColor: Colors.white,
           foregroundColor: const Color(0xFFF26F21),
           elevation: 0,
-          bottom: const TabBar(
-            labelColor: Color(0xFFF26F21),
-            unselectedLabelColor: Colors.black54,
-            indicatorColor: Color(0xFFF26F21),
-            tabs: [
-              Tab(text: 'Equipment'),
-              Tab(text: 'Groups'),
-              Tab(text: 'Grading'),
-            ],
+          centerTitle: true,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(60),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: TabBar(
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.grey[600],
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                indicator: BoxDecoration(
+                  gradient: const LinearGradient(colors: [Color(0xFFF26F21), Color(0xFFFFA726)]),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [BoxShadow(color: const Color(0xFFF26F21).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
+                ),
+                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                tabs: const [
+                  Tab(text: 'Equipment'),
+                  Tab(text: 'Groups'),
+                  Tab(text: 'Grading'),
+                ],
+              ),
+            ),
           ),
         ),
         body: TabBarView(
@@ -129,18 +149,22 @@ class _EquipmentTabState extends State<_EquipmentTab> {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       children: [
-        const Text('Quét mã thiết bị (QR Check)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const Text('Quét mã thiết bị (QR Check)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
         const SizedBox(height: 16),
         Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey[200]!)),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white, 
+            borderRadius: BorderRadius.circular(24), 
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 4))],
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Nhập hoặc quét mã thiết bị để xác nhận bộ dụng cụ cho buổi Lab.', style: TextStyle(color: Colors.black54, fontSize: 13)),
-              const SizedBox(height: 12),
+              const Text('Nhập hoặc quét mã thiết bị để xác nhận bộ dụng cụ cho buổi Lab.', style: TextStyle(color: Colors.black54, fontSize: 13, height: 1.5)),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
@@ -149,31 +173,41 @@ class _EquipmentTabState extends State<_EquipmentTab> {
                       decoration: InputDecoration(
                         hintText: 'Mã QR (VD: OSC-01)',
                         filled: true,
-                        fillColor: Colors.grey[100],
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                        fillColor: Colors.grey[50], // Soft fill
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE))),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFF26F21))),
                         prefixIcon: const Icon(Icons.qr_code_scanner, color: Color(0xFFF26F21)),
                       ),
                       onFieldSubmitted: (_) => _verifyQR(),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: _verifyQR,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueGrey[800],
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                      elevation: 0,
+                  const SizedBox(width: 12),
+                  Container(
+                    height: 56,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [Color(0xFFF26F21), Color(0xFFFFA726)]),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [BoxShadow(color: const Color(0xFFF26F21).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
-                    child: const Text('Kiểm tra', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: ElevatedButton(
+                      onPressed: _verifyQR,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                      ),
+                      child: const Text('Kiểm tra', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                    ),
                   ),
                 ],
               ),
             ],
           ),
         ),
-        const SizedBox(height: 24),
-        const Text('Pre-Session Checklist', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 32),
+        const Text('Pre-Session Checklist', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
         const SizedBox(height: 16),
         if (_isLoadingEquip)
           const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(color: Color(0xFFF26F21))))
@@ -191,21 +225,25 @@ class _EquipmentTabState extends State<_EquipmentTab> {
               return _buildCheckItem('$title x$qty', true); // Tick ngẫu nhiên hoặc lưu trạng thái thực tế
            }).toList(),
         
-        const SizedBox(height: 24),
-        const Text('Post-Session Action', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 32),
+        const Text('Post-Session Action', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
         const SizedBox(height: 8),
-        const Text('Verify all tools are collected and note any damages.'),
+        const Text('Verify all tools are collected and note any damages.', style: TextStyle(color: Colors.black54, fontSize: 13)),
         const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
-          height: 50,
+          height: 56,
           child: OutlinedButton.icon(
             onPressed: () {
                Navigator.push(context, MaterialPageRoute(builder: (_) => const CommonReportIncidentScreen()));
             },
-            icon: const Icon(Icons.report_problem),
-            label: const Text('Report Damaged Equipment'),
-            style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+            icon: const Icon(Icons.report_problem, color: Colors.redAccent),
+            label: const Text('Report Damaged Equipment', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.redAccent,
+              side: const BorderSide(color: Colors.redAccent, width: 1.5),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            ),
           ),
         )
       ],
@@ -354,7 +392,7 @@ class _GroupsTabState extends State<_GroupsTab> {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       children: [
         // Search bar
         Row(
@@ -365,9 +403,11 @@ class _GroupsTabState extends State<_GroupsTab> {
                 decoration: InputDecoration(
                   hintText: 'Tìm theo Tên, Mã SV hoặc ID...',
                   filled: true,
-                  fillColor: Colors.grey[100],
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                  fillColor: Colors.grey[50],
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFF26F21))),
                   prefixIcon: const Icon(Icons.search, color: Colors.grey),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.clear, size: 18),
@@ -380,20 +420,27 @@ class _GroupsTabState extends State<_GroupsTab> {
                 onFieldSubmitted: (_) => _searchUser(),
               ),
             ),
-            const SizedBox(width: 8),
-            ElevatedButton(
-              onPressed: _searchUser,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF26F21),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                elevation: 0,
+            const SizedBox(width: 12),
+            Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [Color(0xFFF26F21), Color(0xFFFFA726)]),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [BoxShadow(color: const Color(0xFFF26F21).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
               ),
-              child: const Text('Search', style: TextStyle(color: Colors.white)),
+              child: ElevatedButton(
+                onPressed: _searchUser,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                ),
+                child: const Icon(Icons.search, color: Colors.white),
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 32),
         
         if (_isLoading)
           const Padding(
@@ -403,43 +450,50 @@ class _GroupsTabState extends State<_GroupsTab> {
         else if (_errorMessage != null)
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.red[100]!)),
             child: Row(
               children: [
                 const Icon(Icons.error_outline, color: Colors.red),
                 const SizedBox(width: 12),
-                Expanded(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red))),
+                Expanded(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w500))),
               ],
             ),
           )
         else if (_students.isEmpty)
           const Center(
             child: Padding(
-              padding: EdgeInsets.all(20.0),
-              child: Text('Không có dữ liệu thành viên phù hợp.', style: TextStyle(color: Colors.grey)),
+              padding: EdgeInsets.all(40.0),
+              child: Text('Không có dữ liệu thành viên phù hợp.', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
             ),
           )
         else
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: ExpansionTile(
-              initiallyExpanded: true,
-              title: const Text('Danh sách Sinh Viên', style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text('Sĩ số: ${_students.length}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12)),
-            children: _students.map((student) {
-               final name = student['fullName'] ?? student['username'] ?? student['userFullName'] ?? student['name'] ?? 'Unknown Student';
-               final code = student['userCode'] ?? student['mssv'] ?? student['userNumberCode'] ?? student['userRollNumber'] ?? '';
-               
-               return ListTile(
-                 leading: const Icon(Icons.person),
-                 title: Text(name),
-                 subtitle: code.isNotEmpty ? Text(code) : null,
-                 trailing: Checkbox(value: true, onChanged: (v){}, activeColor: const Color(0xFFF26F21)),
-               );
-            }).toList(),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
+            ),
+            child: Theme(
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                initiallyExpanded: true,
+                title: const Text('Danh sách Sinh Viên', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                subtitle: Text('Sĩ số: ${_students.length}', style: const TextStyle(color: Color(0xFF4CAF50), fontWeight: FontWeight.bold, fontSize: 13)),
+                children: _students.map((student) {
+                   final name = student['fullName'] ?? student['username'] ?? student['userFullName'] ?? student['name'] ?? 'Unknown Student';
+                   final code = student['userCode'] ?? student['mssv'] ?? student['userNumberCode'] ?? student['userRollNumber'] ?? '';
+                   
+                   return ListTile(
+                     contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                     leading: CircleAvatar(backgroundColor: Colors.grey[100], child: const Icon(Icons.person, color: Colors.grey)),
+                     title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                     subtitle: code.isNotEmpty ? Text(code, style: TextStyle(color: Colors.grey[500])) : null,
+                     trailing: Checkbox(value: true, onChanged: (v){}, activeColor: const Color(0xFFF26F21)),
+                   );
+                }).toList(),
+              ),
+            ),
           ),
-        ),
       ],
     );
   }
@@ -450,54 +504,90 @@ class _GradingTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       children: [
-        const Text('Submit Grades & Feedback', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
+        const Text('Submit Grades & Feedback', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
+        const SizedBox(height: 24),
         _buildGradingForm('Group 1'),
-        const Divider(height: 48),
+        const SizedBox(height: 24),
         _buildGradingForm('Group 2'),
       ],
     );
   }
   Widget _buildGradingForm(String groupName) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(groupName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                decoration: InputDecoration(
-                  labelText: 'Grade (0-10)',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                ),
-                keyboardType: TextInputType.number,
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: const Color(0xFFFFF3E0), borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.auto_stories, color: Color(0xFFF26F21), size: 20),
               ),
-            ),
-            const SizedBox(width: 16),
-            ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF26F21), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24)),
-              child: const Text('Save Grade'),
-            )
-          ],
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          maxLines: 2,
-          decoration: InputDecoration(
-            labelText: 'Feedback (Optional)',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            filled: true,
-            fillColor: Colors.grey[50],
+              const SizedBox(width: 12),
+              Text(groupName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ],
           ),
-        ),
-      ],
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  decoration: InputDecoration(
+                    labelText: 'Grade (0-10)',
+                    filled: true,
+                    fillColor: Colors.grey[50], // Soft fill
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFF26F21))),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Container(
+                height: 56,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [Color(0xFFF26F21), Color(0xFFFFA726)]),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [BoxShadow(color: const Color(0xFFF26F21).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
+                ),
+                child: ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                  ),
+                  child: const Text('Save Grade', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            maxLines: 2,
+            decoration: InputDecoration(
+              labelText: 'Feedback (Optional)',
+              alignLabelWithHint: true,
+              filled: true,
+              fillColor: Colors.grey[50], // Soft fill
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE))),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFF26F21))),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

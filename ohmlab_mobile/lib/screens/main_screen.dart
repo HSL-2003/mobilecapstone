@@ -56,7 +56,7 @@ class _MainScreenState extends State<MainScreen> {
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        selectedItemColor: _getRoleColor(widget.role),
+        selectedItemColor: const Color(0xFFF26F21),
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
         items: const [
@@ -65,15 +65,5 @@ class _MainScreenState extends State<MainScreen> {
         ],
       ),
     );
-  }
-
-  Color _getRoleColor(String role) {
-    switch (role) {
-      case 'lecturer': return const Color(0xFF4361EE);
-      case 'head': return const Color(0xFFBA1826);
-      case 'security': return const Color(0xFF2B2D42);
-      case 'student':
-      default: return const Color(0xFFFB8500);
-    }
   }
 }

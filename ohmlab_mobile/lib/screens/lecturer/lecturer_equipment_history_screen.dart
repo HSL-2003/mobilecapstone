@@ -1,4 +1,6 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class LecturerEquipmentHistoryScreen extends StatefulWidget {
   const LecturerEquipmentHistoryScreen({super.key});
@@ -45,57 +47,79 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: const Text('Lịch sử Mượn/Trả thiết bị', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, letterSpacing: -0.5)),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFFF26F21),
-        elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: Colors.grey[200], height: 1.0),
+      extendBodyBehindAppBar: true,
+      backgroundColor: const Color(0xFFF8F9FA),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(60.0),
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: AppBar(
+              title: const Text('Lịch sử thiết bị', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: -0.5, fontSize: 24, color: Colors.white)),
+              backgroundColor: const Color(0xFFF26F21).withOpacity(0.95),
+              elevation: 0,
+              iconTheme: const IconThemeData(color: Colors.white),
+              systemOverlayStyle: SystemUiOverlayStyle(statusBarBrightness: Brightness.dark),
+            ),
+          ),
         ),
       ),
       body: _equipmentHistory.isEmpty
           ? const Center(child: Text("Chưa có lịch sử mượn trả thiết bị.", style: TextStyle(color: Colors.grey)))
           : ListView.builder(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.only(top: 100, left: 24, right: 24, bottom: 24),
               itemCount: _equipmentHistory.length,
               itemBuilder: (context, index) {
                 final hist = _equipmentHistory[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('${hist['date']} - ${hist['team']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: hist['statusColor'].withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: hist['statusColor'].withOpacity(0.5)),
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 20),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(color: const Color(0xFFFFF0E5), borderRadius: BorderRadius.circular(8)),
+                                child: const Icon(Icons.handyman, color: Color(0xFFF26F21), size: 18),
                               ),
-                              child: Text(
-                                hist['status'],
-                                style: TextStyle(color: hist['statusColor'], fontWeight: FontWeight.bold, fontSize: 12),
-                              ),
-                            )
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        _buildInfoRow(Icons.class_, 'Lớp:', hist['class']),
-                        const SizedBox(height: 8),
-                        _buildInfoRow(Icons.developer_board, 'Thiết bị:', hist['equipment']),
-                        const Divider(height: 24),
-                        Row(
+                              const SizedBox(width: 12),
+                              Text(hist['date'], style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: hist['statusColor'].withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(
+                              hist['status'],
+                              style: TextStyle(color: hist['statusColor'], fontWeight: FontWeight.bold, fontSize: 12),
+                            ),
+                          )
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                      const SizedBox(height: 16),
+                      _buildInfoRow(Icons.group_outlined, 'Lớp / Nhóm', '${hist['class']} - ${hist['team']}'),
+                      const SizedBox(height: 12),
+                      _buildInfoRow(Icons.developer_board, 'Thiết bị', hist['equipment']),
+                      const SizedBox(height: 20),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(color: const Color(0xFFF8F9FA), borderRadius: BorderRadius.circular(16)),
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             _buildTimeBadge(Icons.call_made, 'Mượn: ${hist['borrowTime']}', Colors.blue),
@@ -104,9 +128,9 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
                             else
                               _buildTimeBadge(Icons.timer, 'Chưa trả', Colors.orange),
                           ],
-                        )
-                      ],
-                    ),
+                        ),
+                      )
+                    ],
                   ),
                 );
               },
@@ -118,11 +142,14 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 16, color: Colors.grey[600]),
+        Icon(icon, size: 18, color: Colors.grey[500]),
+        const SizedBox(width: 12),
+        SizedBox(
+          width: 80,
+          child: Text(label, style: TextStyle(color: Colors.grey[500], fontSize: 14, fontWeight: FontWeight.w500)),
+        ),
         const SizedBox(width: 8),
-        Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
-        const SizedBox(width: 8),
-        Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14))),
+        Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF1E1E1E)))),
       ],
     );
   }
@@ -130,9 +157,9 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
   Widget _buildTimeBadge(IconData icon, String text, Color color) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: color),
-        const SizedBox(width: 4),
-        Text(text, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 6),
+        Text(text, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.bold)),
       ],
     );
   }

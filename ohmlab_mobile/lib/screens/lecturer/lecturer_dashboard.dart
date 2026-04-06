@@ -1,10 +1,13 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'lecturer_propose_schedule_screen.dart';
 import 'lecturer_session_management_screen.dart';
 import 'lecturer_equipment_history_screen.dart';
 import '../common/daily_schedule_screen.dart';
 import '../common/common_report_incident_screen.dart';
 import '../common/common_report_history_screen.dart';
+import 'package:ohm_lab_mobile/services/user_services.dart';
 import 'package:ohm_lab_mobile/services/user_services.dart';
 
 class LecturerDashboard extends StatefulWidget {
@@ -85,38 +88,106 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Lecturer Dashboard', style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: -0.5)),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFFF26F21),
-        elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: Colors.grey[200], height: 1.0),
+      extendBodyBehindAppBar: true,
+      backgroundColor: const Color(0xFFF8F9FA), // Soft background
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(60.0),
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: AppBar(
+              title: const Text('Dashboard', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: -0.5, fontSize: 24, color: Colors.white)),
+              backgroundColor: Colors.white.withOpacity(0.1),
+              elevation: 0,
+              iconTheme: const IconThemeData(color: Colors.white),
+              systemOverlayStyle: SystemUiOverlayStyle(statusBarBrightness: Brightness.dark),
+            ),
+          ),
         ),
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('My Classes (Assigned Teams)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
-              const SizedBox(height: 16),
-              _buildTeamsList(),
-              const SizedBox(height: 32),
-              const Text('Pending Tasks', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
-              const SizedBox(height: 16),
-              _buildTaskCard(context, 'Grade Lab 3 Reports', 'IoT Class SE1601', const LecturerSessionManagementScreen()),
-              const SizedBox(height: 12),
-              _buildTaskCard(context, 'Propose Schedule', 'Embedded Systems', const LecturerProposeScheduleScreen()),
-              const SizedBox(height: 32),
-              const Text('Management', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
-              const SizedBox(height: 16),
-              _buildActionGrid(context),
-            ],
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Gorgeous Header Background
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 100, bottom: 40, left: 24, right: 24),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFF26F21), Color(0xFFFFA726)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(40),
+                  bottomRight: Radius.circular(40),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Welcome back,', style: TextStyle(color: Colors.white70, fontSize: 16)),
+                  const SizedBox(height: 8),
+                  const Text('Lecturer Area', style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -1)),
+                  const SizedBox(height: 24),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.white, size: 20),
+                        SizedBox(width: 8),
+                        Text('Your lab sessions are ready.', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Content Body
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('My Classes', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
+                  const SizedBox(height: 16),
+                  _buildTeamsList(),
+                  
+                  const SizedBox(height: 32),
+                  const Text('Pending Tasks', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
+                  const SizedBox(height: 16),
+                  // Horizontal Carousel for Tasks
+                  SizedBox(
+                    height: 140,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      clipBehavior: Clip.none,
+                      children: [
+                        _buildCarouselTaskCard(context, 'Grade Reports', 'Lab 3', Icons.fact_check, const LecturerSessionManagementScreen()),
+                        const SizedBox(width: 16),
+                        _buildCarouselTaskCard(context, 'Propose Sched.', 'Embedded Sys', Icons.calendar_today, const LecturerProposeScheduleScreen()),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 32),
+                  const Text('Management', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
+                  const SizedBox(height: 16),
+                  _buildActionGrid(context),
+                  
+                  const SizedBox(height: 48), // Bottom padding
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -124,13 +195,13 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
 
   Widget _buildTeamsList() {
     if (_isLoading) {
-      return const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()));
+      return const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(color: Color(0xFFF26F21))));
     }
     if (_errorMessage != null) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.red[200]!)),
+        decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.red[100]!)),
         child: Text(_errorMessage!, style: TextStyle(color: Colors.red[800])),
       );
     }
@@ -138,8 +209,8 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey[200]!)),
-        child: const Text('Hiện không có lớp/nhóm nào được phân công.', style: TextStyle(color: Colors.grey)),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey[200]!)),
+        child: const Text('Hiện không có lớp nào được phân công.', style: TextStyle(color: Colors.grey)),
       );
     }
 
@@ -153,11 +224,12 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
         final rawId = team['id'] ?? team['teamId'] ?? team['ID'] ?? team['TeamID'];
         
         return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.only(bottom: 16),
           child: _buildActionCard(
             context, 
             teamName, 
-            details, 
+            details,
+            Icons.class_outlined,
             LecturerSessionManagementScreen(
               teamData: {
                 "id": rawId,
@@ -172,26 +244,34 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
     );
   }
 
-  Widget _buildTaskCard(BuildContext context, String title, String subtitle, Widget destination) {
-    return InkWell(
+  Widget _buildCarouselTaskCard(BuildContext context, String title, String subtitle, IconData icon, Widget destination) {
+    return GestureDetector(
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (_) => destination));
       },
       child: Container(
-        width: double.infinity,
+        width: 160,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[200]!),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(color: const Color(0xFFF26F21).withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 8)),
+          ],
         ),
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: const Color(0xFFF26F21).withOpacity(0.1), shape: BoxShape.circle),
+              child: Icon(icon, color: const Color(0xFFF26F21), size: 24),
+            ),
+            const Spacer(),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
             const SizedBox(height: 4),
-            Text(subtitle, style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+            Text(subtitle, style: TextStyle(color: Colors.grey[500], fontSize: 13, fontWeight: FontWeight.w500)),
           ],
         ),
       ),
@@ -201,27 +281,32 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
   Widget _buildActionGrid(BuildContext context) {
     return Column(
       children: [
-        _buildActionCard(context, 'Today\'s Schedule', 'View all lab slots and classes for today', const DailyScheduleScreen()),
-        const SizedBox(height: 12),
-        _buildActionCard(context, 'My Classes', 'View the list of assigned classes', null),
-        const SizedBox(height: 12),
-        _buildActionCard(context, 'Equipment Check', 'Verify lab tools availability', const LecturerSessionManagementScreen()),
-        const SizedBox(height: 12),
-        _buildActionCard(context, 'Report Incident', 'Log issues related to equipment', const CommonReportIncidentScreen()),
-        const SizedBox(height: 12),
-        _buildActionCard(context, 'Timetable', 'View scheduled practicals', null),
-        const SizedBox(height: 32),
-        const Text('History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+        _buildActionCard(context, 'Today\'s Schedule', 'View lab slots & classes', Icons.schedule, const DailyScheduleScreen()),
         const SizedBox(height: 16),
-        _buildActionCard(context, 'Report History', 'View history of submitted reports', const CommonReportHistoryScreen()),
-        const SizedBox(height: 12),
-        _buildActionCard(context, 'Equipment History', 'View history of lab equipment usage', const LecturerEquipmentHistoryScreen()),
+        _buildActionCard(context, 'Equipment Check', 'Verify lab tools availability', Icons.qr_code_scanner, const LecturerSessionManagementScreen()),
+        const SizedBox(height: 16),
+        _buildActionCard(context, 'Report Incident', 'Log equipment issues', Icons.report_problem, const CommonReportIncidentScreen()),
+        const SizedBox(height: 32),
+        
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(width: 4, height: 20, decoration: BoxDecoration(color: const Color(0xFFF26F21), borderRadius: BorderRadius.circular(2))),
+            const SizedBox(width: 8),
+            const Text('History & Logs', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _buildActionCard(context, 'Report History', 'View submitted reports', Icons.history, const CommonReportHistoryScreen()),
+        const SizedBox(height: 16),
+        _buildActionCard(context, 'Equipment History', 'View usage logs by team', Icons.assignment, const LecturerEquipmentHistoryScreen()),
       ],
     );
   }
 
-  Widget _buildActionCard(BuildContext context, String title, String subtitle, Widget? destination) {
+  Widget _buildActionCard(BuildContext context, String title, String subtitle, IconData icon, Widget? destination) {
     return InkWell(
+      borderRadius: BorderRadius.circular(24),
       onTap: () {
         if (destination != null) {
           Navigator.push(context, MaterialPageRoute(builder: (_) => destination));
@@ -231,17 +316,32 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
         width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[200]!),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 4)),
+          ],
         ),
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Row(
           children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: Colors.black87)),
-            const SizedBox(height: 4),
-            Text(subtitle, style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(16)),
+              child: Icon(icon, color: const Color(0xFFF26F21), size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E1E1E))),
+                  const SizedBox(height: 4),
+                  Text(subtitle, style: TextStyle(color: Colors.grey[500], fontSize: 13, fontWeight: FontWeight.w500)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: Colors.grey[300]),
           ],
         ),
       ),
