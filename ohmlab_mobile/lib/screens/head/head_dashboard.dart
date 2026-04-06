@@ -101,15 +101,15 @@ class HeadDashboard extends StatelessWidget {
                   const SizedBox(height: 32),
                   const Text('Management Tools', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
                   const SizedBox(height: 16),
-                  _buildListAction(context, 'Daily Report (Slots)', 'View today\'s teaching slots', Icons.insert_chart, const DailyScheduleScreen()),
+                  _buildListAction(context, 'Daily Report', Icons.insert_chart, const DailyScheduleScreen()),
                   const SizedBox(height: 16),
-                  _buildListAction(context, 'Schedule Approvals', 'Approve lab schedules', Icons.verified, const HeadScheduleApprovalScreen()),
+                  _buildListAction(context, 'Schedule Approvals', Icons.verified, const HeadScheduleApprovalScreen()),
                   const SizedBox(height: 16),
-                  _buildListAction(context, 'Lecturer Assignment', 'Assign lecturers to classes', Icons.assignment_ind, const HeadLecturerAssignmentScreen()),
+                  _buildListAction(context, 'Lecturer Assignment', Icons.assignment_ind, const HeadLecturerAssignmentScreen()),
                   const SizedBox(height: 16),
-                  _buildListAction(context, 'Class Management', 'Update lab regulations', Icons.domain, const HeadClassManagementScreen()),
+                  _buildListAction(context, 'Class Management', Icons.domain, const HeadClassManagementScreen()),
                   const SizedBox(height: 16),
-                  _buildListAction(context, 'Incident Reports', 'Review escalated issues', Icons.report, null),
+                  _buildListAction(context, 'Incident Reports', Icons.report, null),
                   const SizedBox(height: 48),
                 ],
               ),
@@ -141,7 +141,7 @@ class HeadDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildListAction(BuildContext context, String title, String subtitle, IconData icon, Widget? destination) {
+  Widget _buildListAction(BuildContext context, String title, IconData icon, Widget? destination) {
     return InkWell(
       borderRadius: BorderRadius.circular(24),
       onTap: () {
@@ -168,15 +168,7 @@ class HeadDashboard extends StatelessWidget {
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E1E1E))),
-                  const SizedBox(height: 4),
-                  Text(subtitle, style: TextStyle(color: Colors.grey[500], fontSize: 13, fontWeight: FontWeight.w500)),
-                ],
-              ),
+              child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E1E1E))),
             ),
             Icon(Icons.chevron_right, color: Colors.grey[300]),
           ],

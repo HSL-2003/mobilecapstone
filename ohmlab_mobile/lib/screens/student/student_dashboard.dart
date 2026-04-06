@@ -127,20 +127,20 @@ class StudentDashboard extends StatelessWidget {
   Widget _buildActionGrid(BuildContext context) {
     return Column(
       children: [
-        _buildActionCard(context, 'Today\'s Schedule', 'View today\'s slots & classes', Icons.today, const DailyScheduleScreen()),
+        _buildActionCard(context, 'Schedule', Icons.today, const DailyScheduleScreen()),
         const SizedBox(height: 16),
-        _buildActionCard(context, 'Timetable', 'View your weekly schedule', Icons.calendar_view_week, const StudentScheduleScreen()),
+        _buildActionCard(context, 'Timetable', Icons.calendar_view_week, const StudentScheduleScreen()),
         const SizedBox(height: 16),
-        _buildActionCard(context, 'Report Incident', 'Log equipment issues', Icons.report_problem, const CommonReportIncidentScreen()),
+        _buildActionCard(context, 'Report', Icons.report_problem, const CommonReportIncidentScreen()),
         const SizedBox(height: 16),
-        _buildActionCard(context, 'Lab Instructions', 'Access practical documents', Icons.menu_book, const StudentLabInstructionsScreen()),
+        _buildActionCard(context, 'Instructions', Icons.menu_book, const StudentLabInstructionsScreen()),
         const SizedBox(height: 16),
-        _buildActionCard(context, 'Lab Rules', 'Read compliance guidelines', Icons.rule, null),
+        _buildActionCard(context, 'Rules', Icons.rule, null),
       ],
     );
   }
 
-  Widget _buildActionCard(BuildContext context, String title, String subtitle, IconData icon, Widget? destination) {
+  Widget _buildActionCard(BuildContext context, String title, IconData icon, Widget? destination) {
     return InkWell(
       borderRadius: BorderRadius.circular(24),
       onTap: () {
@@ -167,15 +167,7 @@ class StudentDashboard extends StatelessWidget {
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E1E1E))),
-                  const SizedBox(height: 4),
-                  Text(subtitle, style: TextStyle(color: Colors.grey[500], fontSize: 13, fontWeight: FontWeight.w500)),
-                ],
-              ),
+              child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E1E1E))),
             ),
             Icon(Icons.chevron_right, color: Colors.grey[300]),
           ],

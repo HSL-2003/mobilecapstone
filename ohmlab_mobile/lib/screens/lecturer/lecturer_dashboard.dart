@@ -166,14 +166,14 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
                   const SizedBox(height: 16),
                   // Horizontal Carousel for Tasks
                   SizedBox(
-                    height: 140,
+                    height: 120,
                     child: ListView(
                       scrollDirection: Axis.horizontal,
                       clipBehavior: Clip.none,
                       children: [
-                        _buildCarouselTaskCard(context, 'Grade Reports', 'Lab 3', Icons.fact_check, const LecturerSessionManagementScreen()),
+                        _buildCarouselTaskCard(context, 'Grade Reports', Icons.fact_check, const LecturerSessionManagementScreen()),
                         const SizedBox(width: 16),
-                        _buildCarouselTaskCard(context, 'Propose Sched.', 'Embedded Sys', Icons.calendar_today, const LecturerProposeScheduleScreen()),
+                        _buildCarouselTaskCard(context, 'Propose Sched.', Icons.calendar_today, const LecturerProposeScheduleScreen()),
                       ],
                     ),
                   ),
@@ -228,7 +228,6 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
           child: _buildActionCard(
             context, 
             teamName, 
-            details,
             Icons.class_outlined,
             LecturerSessionManagementScreen(
               teamData: {
@@ -244,7 +243,7 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
     );
   }
 
-  Widget _buildCarouselTaskCard(BuildContext context, String title, String subtitle, IconData icon, Widget destination) {
+  Widget _buildCarouselTaskCard(BuildContext context, String title, IconData icon, Widget destination) {
     return GestureDetector(
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (_) => destination));
@@ -270,8 +269,6 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
             ),
             const Spacer(),
             Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
-            const SizedBox(height: 4),
-            Text(subtitle, style: TextStyle(color: Colors.grey[500], fontSize: 13, fontWeight: FontWeight.w500)),
           ],
         ),
       ),
@@ -281,11 +278,11 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
   Widget _buildActionGrid(BuildContext context) {
     return Column(
       children: [
-        _buildActionCard(context, 'Today\'s Schedule', 'View lab slots & classes', Icons.schedule, const DailyScheduleScreen()),
+        _buildActionCard(context, 'Schedule', Icons.schedule, const DailyScheduleScreen()),
         const SizedBox(height: 16),
-        _buildActionCard(context, 'Equipment Check', 'Verify lab tools availability', Icons.qr_code_scanner, const LecturerSessionManagementScreen()),
+        _buildActionCard(context, 'Equipment', Icons.qr_code_scanner, const LecturerSessionManagementScreen()),
         const SizedBox(height: 16),
-        _buildActionCard(context, 'Report Incident', 'Log equipment issues', Icons.report_problem, const CommonReportIncidentScreen()),
+        _buildActionCard(context, 'Report', Icons.report_problem, const CommonReportIncidentScreen()),
         const SizedBox(height: 32),
         
         Row(
@@ -293,18 +290,18 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
           children: [
             Container(width: 4, height: 20, decoration: BoxDecoration(color: const Color(0xFFF26F21), borderRadius: BorderRadius.circular(2))),
             const SizedBox(width: 8),
-            const Text('History & Logs', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
+            const Text('History', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
           ],
         ),
         const SizedBox(height: 16),
-        _buildActionCard(context, 'Report History', 'View submitted reports', Icons.history, const CommonReportHistoryScreen()),
+        _buildActionCard(context, 'Report History', Icons.history, const CommonReportHistoryScreen()),
         const SizedBox(height: 16),
-        _buildActionCard(context, 'Equipment History', 'View usage logs by team', Icons.assignment, const LecturerEquipmentHistoryScreen()),
+        _buildActionCard(context, 'Equipment History', Icons.assignment, const LecturerEquipmentHistoryScreen()),
       ],
     );
   }
 
-  Widget _buildActionCard(BuildContext context, String title, String subtitle, IconData icon, Widget? destination) {
+  Widget _buildActionCard(BuildContext context, String title, IconData icon, Widget? destination) {
     return InkWell(
       borderRadius: BorderRadius.circular(24),
       onTap: () {
@@ -331,15 +328,7 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E1E1E))),
-                  const SizedBox(height: 4),
-                  Text(subtitle, style: TextStyle(color: Colors.grey[500], fontSize: 13, fontWeight: FontWeight.w500)),
-                ],
-              ),
+              child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E1E1E))),
             ),
             Icon(Icons.chevron_right, color: Colors.grey[300]),
           ],
