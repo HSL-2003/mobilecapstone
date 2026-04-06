@@ -80,6 +80,26 @@ class UserService {
     return ApiResponse.fromResponse(response);
   }
 
+  Future<ApiResponse> searchTeamEquipmentByLecturerId({
+    required String lecturerId,
+    int pageNum = 1,
+    int pageSize = 100,
+    String keyword = "",
+    String status = "",
+  }) async {
+    final response = await _apiService.defaultDio.post(
+      '/api/teamequipment/searchbylecturerid',
+      data: {
+        "pageNum": pageNum,
+        "pageSize": pageSize,
+        "lecturerId": lecturerId,
+        "keyword": keyword,
+        "status": status,
+      },
+    );
+    return ApiResponse.fromResponse(response);
+  }
+
   Future<void> _saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('accessToken', token);

@@ -53,6 +53,48 @@ class _EquipmentTab extends StatefulWidget {
 class _EquipmentTabState extends State<_EquipmentTab> {
   final TextEditingController _qrController = TextEditingController();
   final ReportService _reportService = ReportService();
+  final UserService _userService = UserService();
+  
+  bool _isLoadingEquip = true;
+  List<dynamic> _equipments = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchEquipments();
+  }
+
+  Future<void> _fetchEquipments() async {
+    try {
+      final userData = await _userService.getCurrentUserLocal();
+      final lecturerId = userData?['id']?.toString() ?? userData?['lecturerId']?.toString() ?? userData?['userId']?.toString();
+      if (lecturerId == null) {
+        if (mounted) setState(() { _isLoadingEquip = false; });
+        return;
+      }
+
+      final res = await _userService.searchTeamEquipmentByLecturerId(lecturerId: lecturerId);
+      if (res.status == 200 || res.status == 201) {
+        if (mounted) {
+          setState(() {
+            if (res.data is Map && res.data.containsKey('data')) {
+              final payloadData = res.data['data'];
+              if (payloadData is Map && payloadData.containsKey('pageData')) {
+                _equipments = payloadData['pageData'] is List ? payloadData['pageData'] : [];
+              } else if (payloadData is List) {
+                _equipments = payloadData;
+              }
+            }
+            _isLoadingEquip = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() { _isLoadingEquip = false; });
+      }
+    } catch (e) {
+      if (mounted) setState(() { _isLoadingEquip = false; });
+    }
+  }
 
   Future<void> _verifyQR() async {
     final qr = _qrController.text.trim();
@@ -133,9 +175,22 @@ class _EquipmentTabState extends State<_EquipmentTab> {
         const SizedBox(height: 24),
         const Text('Pre-Session Checklist', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
-        _buildCheckItem('Oscilloscope x5', true),
-        _buildCheckItem('Function Generator x5', true),
-        _buildCheckItem('Breadboards x20', false),
+        if (_isLoadingEquip)
+          const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(color: Color(0xFFF26F21))))
+        else if (_equipments.isEmpty)
+           const Center(child: Padding(padding: EdgeInsets.all(20), child: Text('Không có dữ liệu thiết bị cấp phát.', style: TextStyle(color: Colors.grey))))
+        else
+           ..._equipments.map((equip) {
+              final name = equip['equipmentName'] ?? equip['name'] ?? equip['equipmentCode'] ?? 'Unknown Equipment';
+              final qty = equip['quantity'] ?? 1;
+              final desc = equip['description'] ?? '';
+              final title = desc.isNotEmpty ? '$name ($desc)' : name;
+              // Nếu bạn muốn hiển thị Status
+              // final status = equip['status'];
+              
+              return _buildCheckItem('$title x$qty', true); // Tick ngẫu nhiên hoặc lưu trạng thái thực tế
+           }).toList(),
+        
         const SizedBox(height: 24),
         const Text('Post-Session Action', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
