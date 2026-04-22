@@ -234,20 +234,179 @@ class _GlobalEquipmentScannerState extends State<_GlobalEquipmentScanner> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                            Text('$title x$qty', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Color(0xFF1E1E1E))),
-                           if (status.isNotEmpty) 
-                             Padding(
-                               padding: const EdgeInsets.only(top: 4),
-                               child: Text('Status: $status', style: const TextStyle(fontSize: 12, color: Colors.black54)),
-                             )
-                        ],
+                            if (status.isNotEmpty) 
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text('Status: $status', style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                              )
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              );
+                      IconButton(
+                        icon: const Icon(Icons.handshake_outlined, color: Color(0xFFF26F21)),
+                        tooltip: 'Mượn cho Team',
+                        onPressed: () {
+                          final String rawId = (equip['id'] ?? equip['equipmentId'])?.toString() ?? '';
+                          final String name = equip['name'] ?? equip['equipmentName'] ?? equip['equipmentCode'] ?? '';
+                          if (rawId.isNotEmpty) {
+                            _showBorrowBottomSheet(context, rawId, name);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thiết bị không hợp lệ (Mất ID).')));
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                );
            }).toList(),
       ],
     );
   }
+
+  void _showBorrowBottomSheet(BuildContext context, String equipmentId, String equipmentName) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _BorrowEquipmentForm(equipmentId: equipmentId, equipmentName: equipmentName),
+    );
+  }
 }
 
+class _BorrowEquipmentForm extends StatefulWidget {
+  final String equipmentId;
+  final String equipmentName;
+
+  const _BorrowEquipmentForm({required this.equipmentId, required this.equipmentName});
+
+  @override
+  State<_BorrowEquipmentForm> createState() => _BorrowEquipmentFormState();
+}
+
+class _BorrowEquipmentFormState extends State<_BorrowEquipmentForm> {
+  final UserService _userService = UserService();
+  
+  final _teamIdController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _descController = TextEditingController();
+  
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Default the name field
+    _nameController.text = 'Mượn ' + widget.equipmentName;
+  }
+
+  Future<void> _submit() async {
+    final teamIdText = _teamIdController.text.trim();
+    final nameText = _nameController.text.trim();
+    
+    if (teamIdText.isEmpty || nameText.isEmpty) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng nhập Team ID và Tên thiết bị!')));
+      return;
+    }
+
+    final int? tId = int.tryParse(teamIdText);
+    if (tId == null) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Team ID phải là số hợp lệ!')));
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    
+    try {
+      final payload = {
+        "teamId": tId,
+        "equipmentId": widget.equipmentId,
+        "teamEquipmentName": nameText,
+        "teamEquipmentDescription": _descController.text.trim(),
+      };
+
+      final res = await _userService.borrowEquipment(payload);
+      
+      setState(() => _isSaving = false);
+      
+      if (res.status == 200 || res.status == 201) {
+        if (mounted) {
+          Navigator.pop(context); // Close bottom sheet
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Phân bổ thiết bị cho Team thành công!', style: TextStyle(color: Colors.white)), backgroundColor: Colors.green));
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: ${res.message ?? "Không thể mượn thiết bị."}'), backgroundColor: Colors.red));
+        }
+      }
+    } catch (e) {
+      setState(() => _isSaving = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lỗi kết nối máy chủ.'), backgroundColor: Colors.red));
+      }
+    }
+  }
+
+  Widget _buildField(String label, TextEditingController controller, {bool isNumber = false, int maxLines = 1}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          labelText: label,
+          filled: true,
+          fillColor: Colors.grey[50],
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE))),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE))),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFF26F21))),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.only(
+        left: 24, right: 24, top: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Phân bổ thiết bị: ${widget.equipmentName}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1E1E1E))),
+            const SizedBox(height: 24),
+            _buildField('Tên Thiết Bị (Cho Team) *', _nameController),
+            _buildField('Team ID *', _teamIdController, isNumber: true),
+            _buildField('Mô tả thêm', _descController, maxLines: 2),
+            
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF26F21),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  disabledBackgroundColor: Colors.grey[300]
+                ),
+                child: _isSaving 
+                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Phân bổ thiết bị', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

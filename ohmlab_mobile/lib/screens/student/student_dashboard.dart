@@ -1,13 +1,87 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:ohm_lab_mobile/services/user_services.dart';
+import 'package:ohm_lab_mobile/screens/student/student_teams_list_screen.dart';
 import 'student_schedule_screen.dart';
 import '../common/common_report_incident_screen.dart';
 import 'student_lab_instructions_screen.dart';
 import '../common/daily_schedule_screen.dart';
+import 'package:ohm_lab_mobile/screens/student/student_equipment_history_screen.dart';
 
-class StudentDashboard extends StatelessWidget {
+class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
+
+  @override
+  State<StudentDashboard> createState() => _StudentDashboardState();
+}
+
+class _StudentDashboardState extends State<StudentDashboard> {
+  final UserService _userService = UserService();
+  bool _isLoading = true;
+  String? _errorMessage;
+  List<dynamic> _myClasses = [];
+  String? _studentId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadClasses();
+  }
+
+  Future<void> _loadClasses() async {
+    try {
+      final userResponse = await _userService.getCurrentUser();
+      if (userResponse.status == 200 || userResponse.status == 201) {
+        final payload = userResponse.data;
+        dynamic userData;
+        if (payload is Map && payload.containsKey('data') && payload['data'] != null) {
+          userData = payload['data'];
+        } else {
+          userData = payload;
+        }
+
+        final String? fetchedId = userData['id']?.toString() ?? userData['userId']?.toString();
+        
+        if (fetchedId != null) {
+          _studentId = fetchedId;
+          final classResponse = await _userService.getStudentClasses(fetchedId);
+          if (classResponse.status == 200 || classResponse.status == 201) {
+            setState(() {
+              if (classResponse.data is List) {
+                _myClasses = List<dynamic>.from(classResponse.data);
+              } else if (classResponse.data is Map && classResponse.data.containsKey('data')) {
+                _myClasses = List<dynamic>.from(classResponse.data['data']);
+              } else {
+                _myClasses = [classResponse.data];
+              }
+              _isLoading = false;
+            });
+          } else {
+            setState(() {
+              _errorMessage = 'Không thể tải danh sách lớp học.';
+              _isLoading = false;
+            });
+          }
+        } else {
+           setState(() {
+            _errorMessage = 'Không tìm thấy thông tin Sinh viên từ API.';
+            _isLoading = false;
+          });
+        }
+      } else {
+         setState(() {
+          _errorMessage = 'Phiên đăng nhập không hợp lệ (Lỗi API: ${userResponse.message ?? userResponse.status}).';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Lỗi kết nối (Vui lòng đăng xuất & đăng nhập lại).';
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,11 +154,11 @@ class StudentDashboard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Upcoming Session', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
+                  const Text('My Classes', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
                   const SizedBox(height: 16),
-                  _buildSessionCard(),
+                  _buildClassesList(),
                   const SizedBox(height: 32),
-                  const Text('Quick Actions', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
+                  const Text('Management', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
                   const SizedBox(height: 16),
                   _buildActionGrid(context),
                   const SizedBox(height: 48),
@@ -97,29 +171,121 @@ class StudentDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildSessionCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(color: const Color(0xFFF26F21).withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 8)),
-        ],
-      ),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(color: const Color(0xFFF26F21).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-            child: const Text('TODAY • 14:00 PM', style: TextStyle(color: Color(0xFFF26F21), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
-          ),
-          const SizedBox(height: 12),
-          const Text('Circuit Design Practice', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, letterSpacing: -0.5)),
-          const SizedBox(height: 4),
-          Text('Lab 302', style: TextStyle(color: Colors.grey[600], fontSize: 14, fontWeight: FontWeight.w500)),
-        ],
+  Widget _buildClassesList() {
+    if (_isLoading) {
+      return const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(color: Color(0xFFF26F21))));
+    }
+    if (_errorMessage != null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.red[100]!)),
+        child: Text(_errorMessage!, style: TextStyle(color: Colors.red[800])),
+      );
+    }
+    if (_myClasses.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey[200]!)),
+        child: const Text('Hiện không có lớp nào.', style: TextStyle(color: Colors.grey)),
+      );
+    }
+
+    return Column(
+      children: _myClasses.map((cls) {
+        final rawId = cls['classId'] ?? cls['id'] ?? cls['ID'];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: _buildClassCard(context, cls, rawId),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildClassCard(BuildContext context, Map<String, dynamic> cls, dynamic rawId) {
+    final String className = cls['className'] ?? cls['name'] ?? 'Unknown Class';
+    final String subjectName = cls['subjectName'] ?? 'No Subject';
+    final String semester = cls['semesterName'] ?? '';
+    final String slot = cls['slotName'] ?? '';
+    final String dow = cls['scheduleTypeDow'] ?? '';
+    final String slotStartTime = cls['slotStartTime'] ?? '';
+    final String slotEndTime = cls['slotEndTime'] ?? '';
+    
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: () {
+        Navigator.push(
+          context, 
+          MaterialPageRoute(
+            builder: (_) => StudentTeamsListScreen(
+              classData: {
+                "classId": rawId,
+                "className": className,
+                ...cls,
+              }
+            )
+          )
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 4)),
+          ],
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    className, 
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFF1E1E1E), letterSpacing: -0.5)
+                  ),
+                ),
+                if (semester.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF26F21).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(semester, style: const TextStyle(color: Color(0xFFF26F21), fontWeight: FontWeight.bold, fontSize: 12)),
+                  )
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.book_outlined, size: 16, color: Colors.grey[600]),
+                const SizedBox(width: 8),
+                Expanded(child: Text(subjectName, style: TextStyle(color: Colors.grey[800], fontWeight: FontWeight.w500))),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.calendar_today_outlined, size: 16, color: Colors.grey[600]),
+                const SizedBox(width: 8),
+                Expanded(child: Text(dow, style: TextStyle(color: Colors.grey[600], fontSize: 13))),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
+                const SizedBox(width: 8),
+                Expanded(child: Text('$slot ($slotStartTime - $slotEndTime)', style: TextStyle(color: Colors.grey[600], fontSize: 13))),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -131,11 +297,11 @@ class StudentDashboard extends StatelessWidget {
         const SizedBox(height: 16),
         _buildActionCard(context, 'Timetable', Icons.calendar_view_week, const StudentScheduleScreen()),
         const SizedBox(height: 16),
+        _buildActionCard(context, 'Equipment History', Icons.hardware, const StudentEquipmentHistoryScreen()),
+        const SizedBox(height: 16),
         _buildActionCard(context, 'Report', Icons.report_problem, const CommonReportIncidentScreen()),
         const SizedBox(height: 16),
         _buildActionCard(context, 'Instructions', Icons.menu_book, const StudentLabInstructionsScreen()),
-        const SizedBox(height: 16),
-        _buildActionCard(context, 'Rules', Icons.rule, null),
       ],
     );
   }

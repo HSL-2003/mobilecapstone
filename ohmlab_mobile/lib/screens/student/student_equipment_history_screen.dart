@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:ohm_lab_mobile/services/user_services.dart';
 
-class LecturerEquipmentHistoryScreen extends StatefulWidget {
+class StudentEquipmentHistoryScreen extends StatefulWidget {
   final bool hideAppBar;
-  const LecturerEquipmentHistoryScreen({super.key, this.hideAppBar = false});
+  const StudentEquipmentHistoryScreen({super.key, this.hideAppBar = false});
 
   @override
-  State<LecturerEquipmentHistoryScreen> createState() => _LecturerEquipmentHistoryScreenState();
+  State<StudentEquipmentHistoryScreen> createState() => _StudentEquipmentHistoryScreenState();
 }
 
-class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistoryScreen> {
+class _StudentEquipmentHistoryScreenState extends State<StudentEquipmentHistoryScreen> {
   final UserService _userService = UserService();
   bool _isLoading = true;
   String? _errorMessage;
@@ -35,10 +35,10 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
           userData = payload;
         }
 
-        final String? lecturerId = userData['id']?.toString() ?? userData['userId']?.toString();
+        final String? studentId = userData['id']?.toString() ?? userData['userId']?.toString();
         
-        if (lecturerId != null) {
-          final histResponse = await _userService.searchTeamEquipmentByLecturerId(lecturerId: lecturerId);
+        if (studentId != null) {
+          final histResponse = await _userService.searchTeamEquipmentByStudentId(studentId: studentId);
           if (histResponse.status == 200 || histResponse.status == 201) {
             if (mounted) {
               setState(() {
@@ -83,23 +83,6 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
           _isLoading = false;
         });
       }
-    }
-  }
-
-  Future<void> _giveBack(int teamEquipmentId) async {
-    setState(() => _isLoading = true);
-    try {
-      final res = await _userService.giveBackEquipment(teamEquipmentId);
-      if (res.status == 200 || res.status == 201) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thu hồi thiết bị thành công!'), backgroundColor: Colors.green));
-        _fetchHistory();
-      } else {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: ${res.message}'), backgroundColor: Colors.red));
-        setState(() => _isLoading = false);
-      }
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lỗi kết nối khi thu hồi thiết bị.'), backgroundColor: Colors.red));
-      setState(() => _isLoading = false);
     }
   }
 
@@ -227,19 +210,6 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
                               _buildTimeBadge(Icons.call_made, 'Mượn: $borrowTime', Colors.blue),
                               if (returnTime != null && returnTime.isNotEmpty && returnTime != 'null')
                                 _buildTimeBadge(Icons.call_received, 'Trả: $returnTime', Colors.green)
-                              else if (teamEquipmentId != null)
-                                OutlinedButton.icon(
-                                  onPressed: () => _giveBack(teamEquipmentId),
-                                  icon: const Icon(Icons.assignment_return, size: 16),
-                                  label: const Text('Thu hồi đồ'),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: const Color(0xFFF26F21),
-                                    side: const BorderSide(color: Color(0xFFF26F21)),
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                                    minimumSize: const Size(0, 32),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  ),
-                                )
                               else
                                 _buildTimeBadge(Icons.timer, 'Chưa trả', Colors.orange),
                             ],

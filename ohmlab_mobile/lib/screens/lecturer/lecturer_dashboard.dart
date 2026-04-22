@@ -1,9 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'lecturer_session_management_screen.dart';
+import 'package:ohm_lab_mobile/screens/login.dart';
 import 'package:ohm_lab_mobile/services/user_services.dart';
-
+import 'package:ohm_lab_mobile/screens/lecturer/lecturer_teams_list_screen.dart';
+import 'lecturer_session_management_screen.dart';
 import 'lecturer_schedule_hub_screen.dart';
 import 'lecturer_report_hub_screen.dart';
 import 'lecturer_equipment_hub_screen.dart';
@@ -46,16 +47,16 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
         
         if (fetchedLecturerId != null) {
           _lecturerId = fetchedLecturerId;
-          // 2. Gọi API lấy danh sách Team dựa theo lecturerId
-          final teamResponse = await _userService.getLecturerTeams(fetchedLecturerId);
-          if (teamResponse.status == 200 || teamResponse.status == 201) {
+          // 2. Gọi API lấy danh sách Lớp dựa theo lecturerId
+          final classResponse = await _userService.getLecturerClasses(fetchedLecturerId);
+          if (classResponse.status == 200 || classResponse.status == 201) {
             setState(() {
-              if (teamResponse.data is List) {
-                _myTeams = List<dynamic>.from(teamResponse.data);
-              } else if (teamResponse.data is Map && teamResponse.data.containsKey('data')) {
-                _myTeams = List<dynamic>.from(teamResponse.data['data']);
+              if (classResponse.data is List) {
+                _myTeams = List<dynamic>.from(classResponse.data);
+              } else if (classResponse.data is Map && classResponse.data.containsKey('data')) {
+                _myTeams = List<dynamic>.from(classResponse.data['data']);
               } else {
-                _myTeams = [teamResponse.data]; // Tránh crash
+                _myTeams = [classResponse.data]; // Tránh crash
               }
               _isLoading = false;
             });
@@ -198,31 +199,101 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
     }
 
     return Column(
-      children: _myTeams.map((team) {
-        // Tùy chỉnh việc lấy các field theo cấu trúc trả về thật của DB (ở đây đang mock các key phổ biến)
-        final String teamName = team['teamName'] ?? team['name'] ?? 'Unknown Group'; // Hoặc 'subjectCode'
-        final String details = (team['subjectName'] ?? team['description'] ?? 'Lecturer Team').toString();
-        
-        // Cố gắng parse ID từ bất kỳ field nào có thể là id
-        final rawId = team['id'] ?? team['teamId'] ?? team['ID'] ?? team['TeamID'];
+      children: _myTeams.map((cls) {
+        final rawId = cls['classId'] ?? cls['id'] ?? cls['ID'];
         
         return Padding(
           padding: const EdgeInsets.only(bottom: 16),
-          child: _buildActionCard(
-            context, 
-            teamName, 
-            Icons.class_outlined,
-            LecturerSessionManagementScreen(
-              teamData: {
-                "id": rawId,
-                "teamId": rawId, 
-                "teamName": teamName,
-                ...((team is Map) ? Map<String, dynamic>.from(team) : {})
-              }
-            )
-          ),
+          child: _buildClassCard(context, cls, rawId),
         );
       }).toList(),
+    );
+  }
+
+  Widget _buildClassCard(BuildContext context, Map<String, dynamic> cls, dynamic rawId) {
+    final String className = cls['className'] ?? cls['name'] ?? 'Unknown Class';
+    final String subjectName = cls['subjectName'] ?? 'No Subject';
+    final String semester = cls['semesterName'] ?? '';
+    final String slot = cls['slotName'] ?? '';
+    final String dow = cls['scheduleTypeDow'] ?? '';
+    final String slotStartTime = cls['slotStartTime'] ?? '';
+    final String slotEndTime = cls['slotEndTime'] ?? '';
+    
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: () {
+        Navigator.push(
+          context, 
+          MaterialPageRoute(
+            builder: (_) => LecturerTeamsListScreen(
+              classData: {
+                "classId": rawId,
+                "className": className,
+                ...cls,
+              }
+            )
+          )
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 4)),
+          ],
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    className, 
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFF1E1E1E), letterSpacing: -0.5)
+                  ),
+                ),
+                if (semester.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF26F21).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(semester, style: const TextStyle(color: Color(0xFFF26F21), fontWeight: FontWeight.bold, fontSize: 12)),
+                  )
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.book_outlined, size: 16, color: Colors.grey[600]),
+                const SizedBox(width: 8),
+                Expanded(child: Text(subjectName, style: TextStyle(color: Colors.grey[800], fontWeight: FontWeight.w500))),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.calendar_today_outlined, size: 16, color: Colors.grey[600]),
+                const SizedBox(width: 8),
+                Expanded(child: Text(dow, style: TextStyle(color: Colors.grey[600], fontSize: 13))),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
+                const SizedBox(width: 8),
+                Expanded(child: Text('$slot ($slotStartTime - $slotEndTime)', style: TextStyle(color: Colors.grey[600], fontSize: 13))),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 

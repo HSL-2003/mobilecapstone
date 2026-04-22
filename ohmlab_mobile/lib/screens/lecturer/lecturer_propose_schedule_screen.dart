@@ -140,6 +140,25 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
         ),
       ),
       body: _buildBody(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showCreateScheduleBottomSheet,
+        backgroundColor: const Color(0xFFF26F21),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+
+  void _showCreateScheduleBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _CreateScheduleForm(
+        teacherId: widget.lecturerId,
+        onCreated: () {
+          _fetchSchedules(); // Refresh the list
+        },
+      ),
     );
   }
 
@@ -226,9 +245,24 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
       itemBuilder: (context, index) {
         final schedule = _schedules[index];
         // Safely extract whatever payload might look like
-        final String title = schedule['title']?.toString() ?? schedule['scheduleName']?.toString() ?? 'Schedule #${index + 1}';
-        final String date = schedule['date']?.toString() ?? schedule['registrationDate']?.toString() ?? 'N/A';
-        final String status = schedule['status']?.toString() ?? 'Pending';
+        final String title = schedule['registrationScheduleName']?.toString() ?? schedule['title']?.toString() ?? schedule['scheduleName']?.toString() ?? 'Lịch Đăng Ký #${index + 1}';
+        
+        // Parse date gracefully (backend returns ISO format)
+        String rawDate = schedule['registrationScheduleDate']?.toString() ?? schedule['date']?.toString() ?? 'N/A';
+        String formattedDate = rawDate;
+        if (rawDate != 'N/A') {
+          try {
+            final parsedDate = DateTime.parse(rawDate).toLocal();
+            formattedDate = '${parsedDate.day.toString().padLeft(2, '0')}/${parsedDate.month.toString().padLeft(2, '0')}/${parsedDate.year}';
+          } catch (e) {
+            formattedDate = rawDate; // Fallback to raw if parsing fails
+          }
+        }
+        
+        final String status = schedule['status']?.toString() ?? 'Đã đăng ký';
+        final String desc = schedule['registrationScheduleDescription']?.toString() ?? schedule['description']?.toString() ?? '';
+        final String roomId = schedule['roomId']?.toString() ?? '';
+        final String slotId = schedule['slotId']?.toString() ?? '';
         
         return Container(
           margin: const EdgeInsets.only(bottom: 20),
@@ -275,11 +309,19 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
               const SizedBox(height: 16),
               const Divider(height: 1, color: Color(0xFFEEEEEE)),
               const SizedBox(height: 16),
-              _buildInfoRow(Icons.calendar_today_outlined, 'Date', date),
-              // we can dump other properties dynamically if needed
-              const SizedBox(height: 12),
-              if (schedule['description'] != null)
-                _buildInfoRow(Icons.description_outlined, 'Desc', schedule['description'].toString()),
+              _buildInfoRow(Icons.calendar_today_outlined, 'Ngày', formattedDate),
+              if (roomId.isNotEmpty && roomId != '0') ...[
+                const SizedBox(height: 12),
+                _buildInfoRow(Icons.meeting_room_outlined, 'Phòng', roomId),
+              ],
+              if (slotId.isNotEmpty && slotId != '0') ...[
+                const SizedBox(height: 12),
+                _buildInfoRow(Icons.access_time_outlined, 'Slot', slotId),
+              ],
+              if (desc.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _buildInfoRow(Icons.description_outlined, 'Mô tả', desc),
+              ],
             ],
           ),
         );
@@ -300,6 +342,208 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
         const SizedBox(width: 8),
         Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF1E1E1E)))),
       ],
+    );
+  }
+}
+
+class _CreateScheduleForm extends StatefulWidget {
+  final String teacherId;
+  final VoidCallback onCreated;
+
+  const _CreateScheduleForm({required this.teacherId, required this.onCreated});
+
+  @override
+  State<_CreateScheduleForm> createState() => _CreateScheduleFormState();
+}
+
+class _CreateScheduleFormState extends State<_CreateScheduleForm> {
+  final UserService _userService = UserService();
+  
+  final _nameController = TextEditingController();
+  final _classIdController = TextEditingController();
+  final _roomIdController = TextEditingController();
+  final _labIdController = TextEditingController();
+  final _slotIdController = TextEditingController();
+  final _descController = TextEditingController();
+  
+  DateTime? _selectedDate;
+  bool _isSaving = false;
+
+  Future<void> _submit() async {
+    if (_nameController.text.isEmpty || 
+        _classIdController.text.isEmpty ||
+        _roomIdController.text.isEmpty ||
+        _labIdController.text.isEmpty ||
+        _slotIdController.text.isEmpty ||
+        _selectedDate == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng nhập đủ các trường bắt buộc!')));
+      }
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    
+    try {
+      final payload = {
+        "registrationScheduleName": _nameController.text.trim(),
+        "teacherId": widget.teacherId,
+        "classId": int.tryParse(_classIdController.text) ?? 0,
+        "roomId": int.tryParse(_roomIdController.text) ?? 0,
+        "labId": int.tryParse(_labIdController.text) ?? 0,
+        "slotId": int.tryParse(_slotIdController.text) ?? 0,
+        "registrationScheduleDate": _selectedDate!.toUtc().toIso8601String(),
+        "registrationScheduleDescription": _descController.text.trim()
+      };
+
+      final res = await _userService.createRegistrationSchedule(payload);
+      
+      setState(() => _isSaving = false);
+      
+      if (res.status == 200 || res.status == 201) {
+        if (mounted) {
+          Navigator.pop(context); // Close bottom sheet
+          widget.onCreated();
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tạo lịch đăng ký thành công!')));
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: ${res.message ?? "Không thể tạo lịch."}')));
+        }
+      }
+    } catch (e) {
+      setState(() => _isSaving = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lỗi kết nối máy chủ.')));
+      }
+    }
+  }
+
+  Future<void> _pickDate() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            primaryColor: const Color(0xFFF26F21),
+            colorScheme: const ColorScheme.light(primary: Color(0xFFF26F21)),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (date != null) {
+      setState(() => _selectedDate = date);
+    }
+  }
+
+  Widget _buildField(String label, TextEditingController controller, {bool isNumber = false, int maxLines = 1}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          labelText: label,
+          filled: true,
+          fillColor: Colors.grey[50],
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE))),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE))),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFF26F21))),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.only(
+        left: 24, right: 24, top: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24, // Keyboard padding
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Tạo lịch đăng ký mới', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF1E1E1E))),
+            const SizedBox(height: 24),
+            _buildField('Tên lịch đăng ký *', _nameController),
+            Row(
+              children: [
+                Expanded(child: _buildField('Class ID *', _classIdController, isNumber: true)),
+                const SizedBox(width: 16),
+                Expanded(child: _buildField('Room ID *', _roomIdController, isNumber: true)),
+              ],
+            ),
+            Row(
+              children: [
+                Expanded(child: _buildField('Lab ID *', _labIdController, isNumber: true)),
+                const SizedBox(width: 16),
+                Expanded(child: _buildField('Slot ID *', _slotIdController, isNumber: true)),
+              ],
+            ),
+            
+            // Date Picker Field
+            InkWell(
+              onTap: _pickDate,
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFEEEEEE)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.calendar_today, color: Colors.grey[600]),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        _selectedDate == null 
+                          ? 'Chọn ngày *' 
+                          : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
+                        style: TextStyle(color: _selectedDate == null ? Colors.grey[600] : Colors.black, fontSize: 16),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            _buildField('Mô tả', _descController, maxLines: 3),
+            
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF26F21),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  disabledBackgroundColor: Colors.grey[300]
+                ),
+                child: _isSaving 
+                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Lưu thông tin', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

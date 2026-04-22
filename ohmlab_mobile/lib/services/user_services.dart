@@ -70,6 +70,21 @@ class UserService {
     return ApiResponse.fromResponse(response);
   }
 
+  Future<ApiResponse> getLecturerClasses(String lecturerId) async {
+    final response = await _apiService.defaultDio.get('/api/class/lecturer/$lecturerId');
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> getStudentClasses(String studentId) async {
+    final response = await _apiService.defaultDio.get('/api/class/student/$studentId');
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> getTeamsByClassId(int classId) async {
+    final response = await _apiService.defaultDio.get('/api/team/class/$classId');
+    return ApiResponse.fromResponse(response);
+  }
+
   Future<ApiResponse> getTeamUsers(int teamId) async {
     final response = await _apiService.defaultDio.get('/api/teamuser/team/$teamId');
     return ApiResponse.fromResponse(response);
@@ -93,6 +108,26 @@ class UserService {
         "pageNum": pageNum,
         "pageSize": pageSize,
         "lecturerId": lecturerId,
+        "keyword": keyword.isEmpty ? null : keyword,
+        "status": status.isEmpty ? null : status,
+      },
+    );
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> searchTeamEquipmentByStudentId({
+    required String studentId,
+    int pageNum = 1,
+    int pageSize = 100,
+    String keyword = "",
+    String status = "",
+  }) async {
+    final response = await _apiService.defaultDio.post(
+      '/api/teamequipment/searchbystudentid',
+      data: {
+        "pageNum": pageNum,
+        "pageSize": pageSize,
+        "studentId": studentId,
         "keyword": keyword.isEmpty ? null : keyword,
         "status": status.isEmpty ? null : status,
       },
@@ -125,6 +160,34 @@ class UserService {
 
   Future<ApiResponse> getRegistrationScheduleById(String id) async {
     final response = await _apiService.defaultDio.get('/api/registrationschedule/registrationschedule/$id');
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> borrowEquipment(Map<String, dynamic> payload) async {
+    final response = await _apiService.defaultDio.post(
+      '/api/teamequipment/borrowequipment',
+      data: payload,
+    );
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> giveBackEquipment(int teamEquipmentId) async {
+    final response = await _apiService.defaultDio.post(
+      '/api/teamequipment/givebackequipment?teamEquipment=$teamEquipmentId',
+    );
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> getTeamEquipmentById(int id) async {
+    final response = await _apiService.defaultDio.get('/api/teamequipment/$id');
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> createRegistrationSchedule(Map<String, dynamic> payload) async {
+    final response = await _apiService.defaultDio.post(
+      '/api/registrationschedule/registrationschedule',
+      data: payload,
+    );
     return ApiResponse.fromResponse(response);
   }
 
