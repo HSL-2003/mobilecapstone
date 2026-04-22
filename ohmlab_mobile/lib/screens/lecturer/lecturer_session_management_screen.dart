@@ -53,9 +53,9 @@ class LecturerSessionManagementScreen extends StatelessWidget {
         ),
         body: TabBarView(
           children: [
-            const _EquipmentTab(),
+            _EquipmentTab(teamData: teamData),
             _GroupsTab(teamData: teamData),
-            const _GradingTab(),
+            _GradingTab(teamData: teamData),
           ],
         ),
       ),
@@ -64,7 +64,8 @@ class LecturerSessionManagementScreen extends StatelessWidget {
 }
 
 class _EquipmentTab extends StatefulWidget {
-  const _EquipmentTab();
+  final Map<String, dynamic>? teamData;
+  const _EquipmentTab({this.teamData});
 
   @override
   State<_EquipmentTab> createState() => _EquipmentTabState();
@@ -86,14 +87,12 @@ class _EquipmentTabState extends State<_EquipmentTab> {
 
   Future<void> _fetchEquipments() async {
     try {
-      final userData = await _userService.getCurrentUserLocal();
-      final lecturerId = userData?['id']?.toString() ?? userData?['lecturerId']?.toString() ?? userData?['userId']?.toString();
-      if (lecturerId == null) {
-        if (mounted) setState(() { _isLoadingEquip = false; });
-        return;
-      }
-
-      final res = await _userService.searchTeamEquipmentByLecturerId(lecturerId: lecturerId);
+      final res = await _userService.searchEquipment(
+        pageNum: 1,
+        pageSize: 100,
+        keyword: "",
+        status: "",
+      );
       if (res.status == 200 || res.status == 201) {
         if (mounted) {
           setState(() {
@@ -130,8 +129,8 @@ class _EquipmentTabState extends State<_EquipmentTab> {
     );
 
     try {
-      // Tạm dùng ID lớp là 1 chuỗi fix, thực tế sẽ truyền từ màn hình ngoài vào
-      final res = await _reportService.verifyEquipmentQR("SE1601_LAB3", qr);
+      final id = widget.teamData?['id']?.toString() ?? widget.teamData?['teamId']?.toString() ?? "0";
+      final res = await _reportService.verifyEquipmentQR(id, qr);
       Navigator.pop(context);
       
       if (res.status == 200 || res.status == 201) {
@@ -499,95 +498,210 @@ class _GroupsTabState extends State<_GroupsTab> {
   }
 }
 
-class _GradingTab extends StatelessWidget {
-  const _GradingTab();
+class _GradingTab extends StatefulWidget {
+  final Map<String, dynamic>? teamData;
+  const _GradingTab({this.teamData});
+
+  @override
+  State<_GradingTab> createState() => _GradingTabState();
+}
+
+class _GradingTabState extends State<_GradingTab> {
+  final UserService _userService = UserService();
+  final TextEditingController _gradeCtrl = TextEditingController();
+  final TextEditingController _descCtrl = TextEditingController();
+
+  bool _isLoading = true;
+  bool _isSaving = false;
+  String? _errorMessage;
+
+  int _teamId = 0;
+  int _labId = 0;
+  int _classId = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _initDataAndFetch();
+  }
+
+  Future<void> _initDataAndFetch() async {
+    if (widget.teamData != null) {
+      final tIdRaw = widget.teamData!['teamId'] ?? widget.teamData!['id'];
+      final lIdRaw = widget.teamData!['labId'] ?? widget.teamData!['labId'] ?? 0;
+      final cIdRaw = widget.teamData!['classId'] ?? widget.teamData!['subjectId'] ?? 0;
+
+      // Cố gắng parse int
+      _teamId = int.tryParse(tIdRaw.toString()) ?? 0;
+      _labId = int.tryParse(lIdRaw.toString()) ?? 0;
+      _classId = int.tryParse(cIdRaw.toString()) ?? 0;
+    }
+
+    if (_teamId == 0) {
+      if (mounted) setState(() {
+        _isLoading = false;
+        _errorMessage = "Missing or invalid Team ID.";
+      });
+      return;
+    }
+
+    // Try fetching existing grade
+    try {
+      final res = await _userService.getGrade(_labId, _teamId);
+      if (res.status == 200 || res.status == 201) {
+        if (res.data != null && res.data is Map) {
+          final payload = res.data.containsKey('data') ? res.data['data'] : res.data;
+          if (payload is Map && payload.isNotEmpty) {
+            _gradeCtrl.text = payload['grade']?.toString() ?? '';
+            _descCtrl.text = payload['gradeDescription']?.toString() ?? '';
+             // Cập nhật lại classId / labId từ response nếu có
+             if (payload['classId'] != null) _classId = int.tryParse(payload['classId'].toString()) ?? _classId;
+          }
+        }
+      }
+    } catch (e) {
+      // Ignored: probably no grade or network error. Continue to show empty form.
+      debugPrint("Warning: Fetching grade failed: $e");
+    }
+
+    if (mounted) setState(() { _isLoading = false; });
+  }
+
+  Future<void> _saveGrade() async {
+    if (_teamId == 0) return;
+    
+    final gradeText = _gradeCtrl.text.trim();
+    if (gradeText.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a grade first!'), backgroundColor: Colors.red));
+      return;
+    }
+
+    final double? gradeVal = double.tryParse(gradeText);
+    if (gradeVal == null || gradeVal < 0 || gradeVal > 10) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Grade must be a number between 0 and 10!'), backgroundColor: Colors.red));
+      return;
+    }
+
+    setState(() { _isSaving = true; });
+
+    final payload = {
+      "classId": _classId,
+      "grade": gradeVal,
+      "gradeDescription": _descCtrl.text.trim(),
+      "gradeStatus": "Graded"
+    };
+
+    try {
+      final res = await _userService.submitGrade(_labId, _teamId, payload);
+      if (res.status == 200 || res.status == 201) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Grade saved successfully!'), backgroundColor: Colors.green));
+      } else {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res.message ?? 'Failed to save grade.'), backgroundColor: Colors.red));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error connecting to server.'), backgroundColor: Colors.red));
+    } finally {
+      if (mounted) setState(() { _isSaving = false; });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator(color: Color(0xFFF26F21)));
+    }
+    
+    if (_errorMessage != null) {
+      return Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)));
+    }
+
+    final String teamName = widget.teamData?['teamName'] ?? widget.teamData?['name'] ?? 'Team $_teamId';
+
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
-        const Text('Submit Grades & Feedback', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
+        const Text('Submit Evaluation & Grade', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
         const SizedBox(height: 24),
-        _buildGradingForm('Group 1'),
-        const SizedBox(height: 24),
-        _buildGradingForm('Group 2'),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(color: const Color(0xFFFFF3E0), borderRadius: BorderRadius.circular(8)),
+                    child: const Icon(Icons.auto_stories, color: Color(0xFFF26F21), size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(teamName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _gradeCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'Grade (0-10)',
+                        filled: true,
+                        fillColor: Colors.grey[50], // Soft fill
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE))),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFF26F21))),
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Container(
+                    height: 56,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [Color(0xFFF26F21), Color(0xFFFFA726)]),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [BoxShadow(color: const Color(0xFFF26F21).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: _isSaving ? null : _saveGrade,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                      ),
+                      child: _isSaving 
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Text('Save Grade', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _descCtrl,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Evaluation Feedback',
+                  alignLabelWithHint: true,
+                  filled: true,
+                  fillColor: Colors.grey[50], // Soft fill
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFF26F21))),
+                ),
+              ),
+            ],
+          ),
+        )
       ],
-    );
-  }
-  Widget _buildGradingForm(String groupName) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: const Color(0xFFFFF3E0), borderRadius: BorderRadius.circular(8)),
-                child: const Icon(Icons.auto_stories, color: Color(0xFFF26F21), size: 20),
-              ),
-              const SizedBox(width: 12),
-              Text(groupName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  decoration: InputDecoration(
-                    labelText: 'Grade (0-10)',
-                    filled: true,
-                    fillColor: Colors.grey[50], // Soft fill
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE))),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFF26F21))),
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Container(
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Color(0xFFF26F21), Color(0xFFFFA726)]),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [BoxShadow(color: const Color(0xFFF26F21).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
-                ),
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                  ),
-                  child: const Text('Save Grade', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            maxLines: 2,
-            decoration: InputDecoration(
-              labelText: 'Feedback (Optional)',
-              alignLabelWithHint: true,
-              filled: true,
-              fillColor: Colors.grey[50], // Soft fill
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE))),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFF26F21))),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

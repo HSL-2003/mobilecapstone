@@ -44,5 +44,10 @@ class ReportService {
     );
     return ApiResponse.fromResponse(response);
   }
+
+  Future<ApiResponse> getMyReports() async {
+    final response = await _apiService.defaultDio.get('/api/report/my-reports');
+    return ApiResponse.fromResponse(response);
+  }
 }
 

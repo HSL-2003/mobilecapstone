@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class LecturerEquipmentHistoryScreen extends StatefulWidget {
-  const LecturerEquipmentHistoryScreen({super.key});
+  final bool hideAppBar;
+  const LecturerEquipmentHistoryScreen({super.key, this.hideAppBar = false});
 
   @override
   State<LecturerEquipmentHistoryScreen> createState() => _LecturerEquipmentHistoryScreenState();
@@ -49,7 +50,7 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
     return Scaffold(
       extendBodyBehindAppBar: true,
       backgroundColor: const Color(0xFFF8F9FA),
-      appBar: PreferredSize(
+      appBar: widget.hideAppBar ? null : PreferredSize(
         preferredSize: const Size.fromHeight(60.0),
         child: ClipRRect(
           child: BackdropFilter(
@@ -67,7 +68,7 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
       body: _equipmentHistory.isEmpty
           ? const Center(child: Text("Chưa có lịch sử mượn trả thiết bị.", style: TextStyle(color: Colors.grey)))
           : ListView.builder(
-              padding: const EdgeInsets.only(top: 100, left: 24, right: 24, bottom: 24),
+              padding: EdgeInsets.only(top: widget.hideAppBar ? 24 : 100, left: 24, right: 24, bottom: 24),
               itemCount: _equipmentHistory.length,
               itemBuilder: (context, index) {
                 final hist = _equipmentHistory[index];

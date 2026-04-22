@@ -1,45 +1,69 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:ohm_lab_mobile/services/report_services.dart';
 import 'package:flutter/services.dart';
 
 class CommonReportHistoryScreen extends StatefulWidget {
-  const CommonReportHistoryScreen({super.key});
+  final bool hideAppBar;
+  const CommonReportHistoryScreen({super.key, this.hideAppBar = false});
 
   @override
   State<CommonReportHistoryScreen> createState() => _CommonReportHistoryScreenState();
 }
 
 class _CommonReportHistoryScreenState extends State<CommonReportHistoryScreen> {
-  // Mock data for UI presentation
-  final List<Map<String, dynamic>> _reportHistory = [
-    {
-      "id": "REP-001",
-      "date": "05/04/2026",
-      "className": "IoT Class SE1601",
-      "slot": "Slot 3",
-      "category": "Hardware Failure",
-      "equipment": "OSC-2023-01",
-      "status": "Đã xử lý",
-      "color": Colors.green
-    },
-    {
-      "id": "REP-002",
-      "date": "03/04/2026",
-      "className": "Embedded Systems",
-      "slot": "Slot 1",
-      "category": "Software Issue",
-      "equipment": "",
-      "status": "Đang xử lý",
-      "color": Colors.orange
-    },
-  ];
+  final ReportService _reportService = ReportService();
+  bool _isLoading = true;
+  String? _error;
+  List<dynamic> _reportHistory = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchReports();
+  }
+
+  Future<void> _fetchReports() async {
+    try {
+      final res = await _reportService.getMyReports();
+      if (res.status == 200 || res.status == 201) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            if (res.data is Map && res.data.containsKey('data')) {
+              final payload = res.data['data'];
+              if (payload is Map && payload.containsKey('reports')) {
+                _reportHistory = payload['reports'] is List ? payload['reports'] : [];
+              } else if (payload is List) {
+                _reportHistory = payload;
+              }
+            }
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _error = res.message ?? "Lỗi tải lịch sử báo cáo.";
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = "Lỗi kết nối máy chủ.";
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
       backgroundColor: const Color(0xFFF8F9FA),
-      appBar: PreferredSize(
+      appBar: widget.hideAppBar ? null : PreferredSize(
         preferredSize: const Size.fromHeight(60.0),
         child: ClipRRect(
           child: BackdropFilter(
@@ -54,13 +78,65 @@ class _CommonReportHistoryScreenState extends State<CommonReportHistoryScreen> {
           ),
         ),
       ),
-      body: _reportHistory.isEmpty
-          ? const Center(child: Text("Chưa có bất kỳ báo cáo nào.", style: TextStyle(color: Colors.grey)))
-          : ListView.builder(
-              padding: const EdgeInsets.only(top: 100, left: 24, right: 24, bottom: 24),
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator(color: Color(0xFFF26F21)));
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 60, color: Colors.orange),
+              const SizedBox(height: 16),
+              Text(_error!, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() => _isLoading = true);
+                  _fetchReports();
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF26F21)),
+                child: const Text('Thử lại', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_reportHistory.isEmpty) {
+      return const Center(child: Text("Chưa có bất kỳ báo cáo nào.", style: TextStyle(color: Colors.grey)));
+    }
+
+    return ListView.builder(
+              padding: EdgeInsets.only(top: widget.hideAppBar ? 24 : 100, left: 24, right: 24, bottom: 24),
               itemCount: _reportHistory.length,
               itemBuilder: (context, index) {
                 final report = _reportHistory[index];
+                
+                final String idStr = report['id']?.toString() ?? 'N/A';
+                final String dateStr = report['createdDate']?.toString() ?? report['reportDate']?.toString() ?? 'Unknown Date';
+                final String classStr = report['className']?.toString() ?? 'N/A';
+                final String slotStr = report['slot']?.toString() ?? '';
+                final String categoryStr = report['categoryName']?.toString() ?? report['reportCategory']?.toString() ?? 'Other';
+                final String equipStr = report['equipmentName']?.toString() ?? report['equipment']?.toString() ?? '';
+                final String statusStr = report['status']?.toString() ?? 'Pending';
+                
+                Color statusColor = Colors.orange;
+                if (statusStr.toLowerCase().contains('done') || statusStr.toLowerCase().contains('xử lý')) {
+                  statusColor = Colors.green;
+                } else if (statusStr.toLowerCase().contains('reject')) {
+                  statusColor = Colors.red;
+                }
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 20),
                   padding: const EdgeInsets.all(20),
@@ -83,18 +159,19 @@ class _CommonReportHistoryScreenState extends State<CommonReportHistoryScreen> {
                                 child: const Icon(Icons.receipt_long, color: Color(0xFFF26F21), size: 18),
                               ),
                               const SizedBox(width: 12),
-                              Text(report['id'], style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
+                              Text(idStr.length > 8 ? '${idStr.substring(0, 8)}...' : idStr, 
+                               style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
                             ],
                           ),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: report['color'].withOpacity(0.1),
+                              color: statusColor.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Text(
-                              report['status'],
-                              style: TextStyle(color: report['color'], fontWeight: FontWeight.bold, fontSize: 12),
+                              statusStr,
+                              style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12),
                             ),
                           )
                         ],
@@ -102,21 +179,20 @@ class _CommonReportHistoryScreenState extends State<CommonReportHistoryScreen> {
                       const SizedBox(height: 16),
                       const Divider(height: 1, color: Color(0xFFEEEEEE)),
                       const SizedBox(height: 16),
-                      _buildInfoRow(Icons.calendar_today_outlined, 'Ngày gửi', report['date']),
+                      _buildInfoRow(Icons.calendar_today_outlined, 'Ngày gửi', dateStr),
                       const SizedBox(height: 12),
-                      _buildInfoRow(Icons.class_outlined, 'Lớp', '${report['className']} - ${report['slot']}'),
+                      _buildInfoRow(Icons.class_outlined, 'Lớp', '$classStr - $slotStr'),
                       const SizedBox(height: 12),
-                      _buildInfoRow(Icons.warning_amber_rounded, 'Sự cố', report['category']),
-                      if (report['equipment'] != null && report['equipment'].toString().isNotEmpty) ...[
+                      _buildInfoRow(Icons.warning_amber_rounded, 'Sự cố', categoryStr),
+                      if (equipStr.isNotEmpty) ...[
                         const SizedBox(height: 12),
-                        _buildInfoRow(Icons.qr_code_scanner, 'Thiết bị', report['equipment']),
+                        _buildInfoRow(Icons.qr_code_scanner, 'Thiết bị', equipStr),
                       ]
                     ],
                   ),
                 );
               },
-            ),
-    );
+            );
   }
 
   Widget _buildInfoRow(IconData icon, String label, String value) {

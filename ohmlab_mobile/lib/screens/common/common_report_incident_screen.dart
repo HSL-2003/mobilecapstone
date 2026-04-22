@@ -4,7 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:ohm_lab_mobile/services/report_services.dart';
 
 class CommonReportIncidentScreen extends StatefulWidget {
-  const CommonReportIncidentScreen({super.key});
+  final bool hideAppBar;
+  const CommonReportIncidentScreen({super.key, this.hideAppBar = false});
 
   @override
   State<CommonReportIncidentScreen> createState() => _CommonReportIncidentScreenState();
@@ -89,7 +90,7 @@ class _CommonReportIncidentScreenState extends State<CommonReportIncidentScreen>
     return Scaffold(
       extendBodyBehindAppBar: true,
       backgroundColor: const Color(0xFFF8F9FA),
-      appBar: PreferredSize(
+      appBar: widget.hideAppBar ? null : PreferredSize(
         preferredSize: const Size.fromHeight(60.0),
         child: ClipRRect(
           child: BackdropFilter(
@@ -110,7 +111,7 @@ class _CommonReportIncidentScreenState extends State<CommonReportIncidentScreen>
           children: [
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.only(top: 100, bottom: 40, left: 24, right: 24),
+              padding: EdgeInsets.only(top: widget.hideAppBar ? 24 : 100, bottom: 40, left: 24, right: 24),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [Color(0xFFF26F21), Color(0xFFFFA726)],

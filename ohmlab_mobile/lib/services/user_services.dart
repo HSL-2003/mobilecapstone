@@ -93,9 +93,50 @@ class UserService {
         "pageNum": pageNum,
         "pageSize": pageSize,
         "lecturerId": lecturerId,
-        "keyword": keyword,
-        "status": status,
+        "keyword": keyword.isEmpty ? null : keyword,
+        "status": status.isEmpty ? null : status,
       },
+    );
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> searchEquipment({
+    int pageNum = 1,
+    int pageSize = 100,
+    String keyword = "",
+    String status = "",
+  }) async {
+    final response = await _apiService.defaultDio.post(
+      '/api/equipment/search',
+      data: {
+        "pageNum": pageNum,
+        "pageSize": pageSize,
+        "keyword": keyword.isEmpty ? null : keyword,
+        "status": status.isEmpty ? null : status,
+      },
+    );
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> getRegistrationSchedulesByTeacherId(String teacherId) async {
+    final response = await _apiService.defaultDio.get('/api/registrationschedule/listregistrationschedulebyteacherid/$teacherId');
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> getRegistrationScheduleById(String id) async {
+    final response = await _apiService.defaultDio.get('/api/registrationschedule/registrationschedule/$id');
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> getGrade(int labId, int teamId) async {
+    final response = await _apiService.defaultDio.get('/api/grade/labs/$labId/teams/$teamId/grade');
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> submitGrade(int labId, int teamId, Map<String, dynamic> payload) async {
+    final response = await _apiService.defaultDio.post(
+      '/api/grade/labs/$labId/teams/$teamId/grade', 
+      data: payload
     );
     return ApiResponse.fromResponse(response);
   }

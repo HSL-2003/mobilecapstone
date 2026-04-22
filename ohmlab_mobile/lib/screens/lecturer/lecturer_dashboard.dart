@@ -1,14 +1,12 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'lecturer_propose_schedule_screen.dart';
 import 'lecturer_session_management_screen.dart';
-import 'lecturer_equipment_history_screen.dart';
-import '../common/daily_schedule_screen.dart';
-import '../common/common_report_incident_screen.dart';
-import '../common/common_report_history_screen.dart';
 import 'package:ohm_lab_mobile/services/user_services.dart';
-import 'package:ohm_lab_mobile/services/user_services.dart';
+
+import 'lecturer_schedule_hub_screen.dart';
+import 'lecturer_report_hub_screen.dart';
+import 'lecturer_equipment_hub_screen.dart';
 
 class LecturerDashboard extends StatefulWidget {
   const LecturerDashboard({super.key});
@@ -22,6 +20,7 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
   bool _isLoading = true;
   List<dynamic> _myTeams = [];
   String? _errorMessage;
+  String? _lecturerId;
 
   @override
   void initState() {
@@ -43,11 +42,12 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
         }
 
         // Tìm ID giảng viên 
-        final String? lecturerId = userData['id']?.toString() ?? userData['lecturerId']?.toString() ?? userData['userId']?.toString();
+        final String? fetchedLecturerId = userData['id']?.toString() ?? userData['lecturerId']?.toString() ?? userData['userId']?.toString();
         
-        if (lecturerId != null) {
+        if (fetchedLecturerId != null) {
+          _lecturerId = fetchedLecturerId;
           // 2. Gọi API lấy danh sách Team dựa theo lecturerId
-          final teamResponse = await _userService.getLecturerTeams(lecturerId);
+          final teamResponse = await _userService.getLecturerTeams(fetchedLecturerId);
           if (teamResponse.status == 200 || teamResponse.status == 201) {
             setState(() {
               if (teamResponse.data is List) {
@@ -162,23 +162,6 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
                   _buildTeamsList(),
                   
                   const SizedBox(height: 32),
-                  const Text('Pending Tasks', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
-                  const SizedBox(height: 16),
-                  // Horizontal Carousel for Tasks
-                  SizedBox(
-                    height: 120,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      clipBehavior: Clip.none,
-                      children: [
-                        _buildCarouselTaskCard(context, 'Grade Reports', Icons.fact_check, const LecturerSessionManagementScreen()),
-                        const SizedBox(width: 16),
-                        _buildCarouselTaskCard(context, 'Propose Sched.', Icons.calendar_today, const LecturerProposeScheduleScreen()),
-                      ],
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 32),
                   const Text('Management', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
                   const SizedBox(height: 16),
                   _buildActionGrid(context),
@@ -243,10 +226,10 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
     );
   }
 
-  Widget _buildCarouselTaskCard(BuildContext context, String title, IconData icon, Widget destination) {
+  Widget _buildCarouselTaskCard(BuildContext context, String title, IconData icon, WidgetBuilder destinationBuilder) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => destination));
+        Navigator.push(context, MaterialPageRoute(builder: destinationBuilder));
       },
       child: Container(
         width: 160,
@@ -278,25 +261,11 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
   Widget _buildActionGrid(BuildContext context) {
     return Column(
       children: [
-        _buildActionCard(context, 'Schedule', Icons.schedule, const DailyScheduleScreen()),
+        _buildActionCard(context, 'Schedule', Icons.schedule, LecturerScheduleHubScreen(lecturerId: _lecturerId ?? '')),
         const SizedBox(height: 16),
-        _buildActionCard(context, 'Equipment', Icons.qr_code_scanner, const LecturerSessionManagementScreen()),
+        _buildActionCard(context, 'Equipment', Icons.qr_code_scanner, const LecturerEquipmentHubScreen()),
         const SizedBox(height: 16),
-        _buildActionCard(context, 'Report', Icons.report_problem, const CommonReportIncidentScreen()),
-        const SizedBox(height: 32),
-        
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(width: 4, height: 20, decoration: BoxDecoration(color: const Color(0xFFF26F21), borderRadius: BorderRadius.circular(2))),
-            const SizedBox(width: 8),
-            const Text('History', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildActionCard(context, 'Report History', Icons.history, const CommonReportHistoryScreen()),
-        const SizedBox(height: 16),
-        _buildActionCard(context, 'Equipment History', Icons.assignment, const LecturerEquipmentHistoryScreen()),
+        _buildActionCard(context, 'Report', Icons.report_problem, const LecturerReportHubScreen()),
       ],
     );
   }

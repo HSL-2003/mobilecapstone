@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:ohm_lab_mobile/services/report_services.dart';
 
 class DailyScheduleScreen extends StatefulWidget {
-  const DailyScheduleScreen({super.key});
+  final bool hideAppBar;
+  const DailyScheduleScreen({super.key, this.hideAppBar = false});
 
   @override
   State<DailyScheduleScreen> createState() => _DailyScheduleScreenState();
@@ -66,7 +67,7 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
-      appBar: AppBar(
+      appBar: widget.hideAppBar ? null : AppBar(
         title: const Text('Lịch trình hôm nay', style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: -0.5)),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFFF26F21),
