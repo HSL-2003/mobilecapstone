@@ -3,20 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:ohm_lab_mobile/services/user_services.dart';
 
-class StudentEquipmentHistoryScreen extends StatefulWidget {
+class StudentKitHistoryScreen extends StatefulWidget {
   final bool hideAppBar;
   final int? teamId;
-  const StudentEquipmentHistoryScreen({super.key, this.hideAppBar = false, this.teamId});
+  const StudentKitHistoryScreen({super.key, this.hideAppBar = false, this.teamId});
 
   @override
-  State<StudentEquipmentHistoryScreen> createState() => _StudentEquipmentHistoryScreenState();
+  State<StudentKitHistoryScreen> createState() => _StudentKitHistoryScreenState();
 }
 
-class _StudentEquipmentHistoryScreenState extends State<StudentEquipmentHistoryScreen> {
+class _StudentKitHistoryScreenState extends State<StudentKitHistoryScreen> {
   final UserService _userService = UserService();
   bool _isLoading = true;
   String? _errorMessage;
-  List<dynamic> _equipmentHistory = [];
+  List<dynamic> _kitHistory = [];
 
   @override
   void initState() {
@@ -39,18 +39,18 @@ class _StudentEquipmentHistoryScreenState extends State<StudentEquipmentHistoryS
       }
 
       if (effectiveTeamId != null) {
-        final histResponse = await _userService.getTeamEquipmentByTeamId(effectiveTeamId);
+        final histResponse = await _userService.getTeamKitByTeamId(effectiveTeamId);
         if (histResponse.status == 200 || histResponse.status == 201) {
           if (mounted) {
             setState(() {
               final histPayload = histResponse.data;
               dynamic dataItems = histPayload is Map && histPayload.containsKey('data') ? histPayload['data'] : histPayload;
-              _equipmentHistory = dataItems is List ? dataItems : [];
+              _kitHistory = dataItems is List ? dataItems : [];
               _isLoading = false;
             });
           }
         } else {
-          if (mounted) setState(() { _errorMessage = 'Không thể tải lịch sử thiết bị của nhóm.'; _isLoading = false; });
+          if (mounted) setState(() { _errorMessage = 'Không thể tải lịch sử Kit của nhóm.'; _isLoading = false; });
         }
       } else {
         if (mounted) setState(() { _errorMessage = 'Hãy vào "Danh sách Team" để xem lịch sử của nhóm bạn.'; _isLoading = false; });
@@ -71,7 +71,7 @@ class _StudentEquipmentHistoryScreenState extends State<StudentEquipmentHistoryS
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: AppBar(
-              title: const Text('Lịch sử thiết bị', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: -0.5, fontSize: 24, color: Colors.white)),
+              title: const Text('Lịch sử Kit', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: -0.5, fontSize: 24, color: Colors.white)),
               backgroundColor: const Color(0xFFF26F21).withOpacity(0.95),
               elevation: 0,
               iconTheme: const IconThemeData(color: Colors.white),
@@ -84,15 +84,15 @@ class _StudentEquipmentHistoryScreenState extends State<StudentEquipmentHistoryS
         ? const Center(child: CircularProgressIndicator(color: Color(0xFFF26F21)))
         : _errorMessage != null
           ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(_errorMessage!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red))))
-          : _equipmentHistory.isEmpty
-            ? const Center(child: Text("Nhóm chưa có lịch sử mượn trả thiết bị.", style: TextStyle(color: Colors.grey)))
+          : _kitHistory.isEmpty
+            ? const Center(child: Text("Nhóm chưa có lịch sử mượn trả Kit.", style: TextStyle(color: Colors.grey)))
             : ListView.builder(
                 padding: EdgeInsets.only(top: widget.hideAppBar ? 24 : 100, left: 24, right: 24, bottom: 24),
-                itemCount: _equipmentHistory.length,
+                itemCount: _kitHistory.length,
                 itemBuilder: (context, index) {
-                  final hist = _equipmentHistory[index];
+                  final hist = _kitHistory[index];
                   
-                  final String rawBorrowDate = hist['teamEquipmentDateBorrow']?.toString() ?? '';
+                  final String rawBorrowDate = hist['teamKitDateBorrow']?.toString() ?? '';
                   String displayDate = 'N/A';
                   String borrowTime = 'N/A';
                   if (rawBorrowDate.isNotEmpty && rawBorrowDate != 'null') {
@@ -103,7 +103,7 @@ class _StudentEquipmentHistoryScreenState extends State<StudentEquipmentHistoryS
                     } catch (_) {}
                   }
 
-                  final String rawGiveBackDate = hist['teamEquipmentDateGiveBack']?.toString() ?? '';
+                  final String rawGiveBackDate = hist['teamKitDateGiveBack']?.toString() ?? '';
                   String? returnTime;
                   if (rawGiveBackDate.isNotEmpty && rawGiveBackDate != 'null') {
                     try {
@@ -114,14 +114,15 @@ class _StudentEquipmentHistoryScreenState extends State<StudentEquipmentHistoryS
 
                   final String teamName = hist['teamName']?.toString() ?? 'Nhóm';
                   final String className = hist['className']?.toString() ?? '';
-                  final String equipmentName = hist['equipmentName']?.toString() ?? 'Thiết bị';
-                  final String eqCode = hist['equipmentCode']?.toString() ?? '-';
+                  final String kitName = hist['kitName']?.toString() ?? 'Kit';
+                  final String kitCode = hist['kitId']?.toString() ?? hist['kitCode']?.toString() ?? '-';
+                   final String? kitImgUrl = hist['kitImgUrl']?.toString();
                   
-                  final String rawStatus = hist['teamEquipmentStatus']?.toString() ?? 'Unknown';
+                  final String rawStatus = hist['teamKitStatus']?.toString() ?? 'Unknown';
                   final String status = rawStatus == 'AreBorrowing' ? 'Đang sử dụng' : (rawStatus == 'GiveBack' ? 'Đã trả' : (rawStatus == 'Paid' ? 'Đã trả' : rawStatus));
                   final Color statusColor = (status == 'Đã trả') ? Colors.green : Colors.orange;
                   
-                  final int? teamEquipmentId = int.tryParse(hist['teamEquipmentId']?.toString() ?? '');
+                  final int? teamKitId = int.tryParse(hist['teamKitId']?.toString() ?? '');
 
                   return Container(
                       margin: const EdgeInsets.only(bottom: 20),
@@ -139,12 +140,23 @@ class _StudentEquipmentHistoryScreenState extends State<StudentEquipmentHistoryS
                           children: [
                             Row(
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(color: const Color(0xFFFFF0E5), borderRadius: BorderRadius.circular(8)),
-                                  child: const Icon(Icons.handyman, color: Color(0xFFF26F21), size: 18),
-                                ),
-                                const SizedBox(width: 12),
+                                if (kitImgUrl != null && kitImgUrl.isNotEmpty && kitImgUrl != 'null')
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    margin: const EdgeInsets.only(right: 12),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8),
+                                      image: DecorationImage(image: NetworkImage(kitImgUrl), fit: BoxFit.cover),
+                                    ),
+                                  )
+                                else
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    margin: const EdgeInsets.only(right: 12),
+                                    decoration: BoxDecoration(color: const Color(0xFFFFF0E5), borderRadius: BorderRadius.circular(8)),
+                                    child: const Icon(Icons.inventory_2, color: Color(0xFFF26F21), size: 18),
+                                  ),
                                 Text(displayDate, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
                               ],
                             ),
@@ -166,7 +178,7 @@ class _StudentEquipmentHistoryScreenState extends State<StudentEquipmentHistoryS
                         const SizedBox(height: 16),
                         _buildInfoRow(Icons.group_outlined, 'Lớp/Nhóm', '$className - $teamName'),
                         const SizedBox(height: 12),
-                        _buildInfoRow(Icons.developer_board, 'Thiết bị', '$equipmentName ($eqCode)'),
+                        _buildInfoRow(Icons.developer_board, 'Kit', '$kitName ($kitCode)'),
                         const SizedBox(height: 20),
                         Container(
                           padding: const EdgeInsets.all(16),

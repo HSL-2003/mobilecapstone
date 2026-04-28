@@ -115,23 +115,8 @@ class UserService {
     return ApiResponse.fromResponse(response);
   }
 
-  Future<ApiResponse> searchTeamEquipmentByStudentId({
-    required String studentId,
-    int pageNum = 1,
-    int pageSize = 100,
-    String keyword = "",
-    String status = "",
-  }) async {
-    final response = await _apiService.defaultDio.post(
-      '/api/teamequipment/searchbystudentid',
-      data: {
-        "pageNum": pageNum,
-        "pageSize": pageSize,
-        "studentId": studentId,
-        "keyword": keyword.isEmpty ? null : keyword,
-        "status": status.isEmpty ? null : status,
-      },
-    );
+  Future<ApiResponse> getTeamEquipmentByTeamId(int teamId) async {
+    final response = await _apiService.defaultDio.get('/api/teamequipment/listteamequipmentbyteamid/$teamId');
     return ApiResponse.fromResponse(response);
   }
 
@@ -200,6 +185,81 @@ class UserService {
     final response = await _apiService.defaultDio.post(
       '/api/grade/labs/$labId/teams/$teamId/grade', 
       data: payload
+    );
+    return ApiResponse.fromResponse(response);
+  }
+
+  // --- Kit Management APIs ---
+
+  Future<ApiResponse> borrowKit(Map<String, dynamic> payload) async {
+    final response = await _apiService.defaultDio.post(
+      '/api/teamkit/borrowkit',
+      data: payload,
+    );
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> giveBackKit(int teamKitId) async {
+    final response = await _apiService.defaultDio.post(
+      '/api/teamkit/givebackkit?teamKit=$teamKitId',
+    );
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> getTeamKitByTeamId(int teamId) async {
+    final response = await _apiService.defaultDio.get('/api/teamkit/listteamkitteamid/$teamId');
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> searchTeamKitByLecturerId({
+    required String lecturerId,
+    int pageNum = 1,
+    int pageSize = 100,
+    String keyword = "",
+    String status = "",
+  }) async {
+    final response = await _apiService.defaultDio.post(
+      '/api/teamkit/searchbylecturerid',
+      data: {
+        "pageNum": pageNum,
+        "pageSize": pageSize,
+        "lecturerId": lecturerId,
+        "keyword": keyword.isEmpty ? null : keyword,
+        "status": status.isEmpty ? null : status,
+      },
+    );
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> getTeamKitById(int id) async {
+    final response = await _apiService.defaultDio.get('/api/teamkit/$id');
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> searchKits({
+    int pageNum = 1,
+    int pageSize = 100,
+    String keyword = "",
+    String status = "",
+  }) async {
+    final response = await _apiService.defaultDio.post(
+      '/api/kit/search',
+      data: {
+        "pageNum": pageNum,
+        "pageSize": pageSize,
+        "keyword": keyword.isEmpty ? null : keyword,
+        "status": status.isEmpty ? null : status,
+      },
+    );
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> addUsersToTeam(List<Map<String, dynamic>> listTeamUser) async {
+    final response = await _apiService.defaultDio.post(
+      '/api/teamuser/teamuser',
+      data: {
+        "listTeamUser": listTeamUser,
+      },
     );
     return ApiResponse.fromResponse(response);
   }

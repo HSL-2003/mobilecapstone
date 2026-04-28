@@ -152,8 +152,9 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
       itemCount: users.length,
       itemBuilder: (context, index) {
         final user = users[index];
-        final String name = user['userName'] ?? user['fullName'] ?? user['name'] ?? 'Unknown User';
+        final String name = user['userFullName'] ?? user['userName'] ?? user['fullName'] ?? user['name'] ?? 'Unknown User';
         final String code = user['userCode'] ?? user['studentCode'] ?? user['code'] ?? 'N/A';
+        final String? userId = user['id']?.toString() ?? user['userId']?.toString();
         
         return Container(
           margin: const EdgeInsets.only(bottom: 16),
@@ -187,11 +188,110 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
                   ],
                 ),
               ),
+              IconButton(
+                icon: const Icon(Icons.group_add, color: Color(0xFFF26F21)),
+                onPressed: () {
+                  if (userId != null) {
+                    _showTeamSelector(userId, name);
+                  }
+                },
+                tooltip: 'Thêm vào nhóm',
+              ),
             ],
           ),
         );
       },
     );
+  }
+
+  Future<void> _showTeamSelector(String userId, String userName) async {
+    if (_teams.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lớp hiện chưa có nhóm nào.')));
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Thêm $userName vào nhóm', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1E1E1E))),
+            const SizedBox(height: 16),
+            const Text('Chọn nhóm để thêm sinh viên này vào:', style: TextStyle(color: Colors.grey, fontSize: 14)),
+            const SizedBox(height: 24),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _teams.length,
+                itemBuilder: (context, idx) {
+                  final team = _teams[idx];
+                  final String teamName = team['teamName'] ?? 'Nhóm ${idx + 1}';
+                  final teamId = team['teamId'] ?? team['id'];
+
+                  return ListTile(
+                    leading: const Icon(Icons.groups, color: Color(0xFFF26F21)),
+                    title: Text(teamName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _addUserToTeam(userId, teamId);
+                    },
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Hủy', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _addUserToTeam(String userId, dynamic teamId) async {
+    final int? tId = int.tryParse(teamId.toString());
+    if (tId == null) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator(color: Color(0xFFF26F21))),
+    );
+
+    try {
+      final res = await _userService.addUsersToTeam([
+        {"teamId": tId, "userId": userId}
+      ]);
+      Navigator.pop(context);
+
+      if (res.status == 200 || res.status == 201) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã thêm sinh viên vào nhóm thành công!'), backgroundColor: Colors.green));
+          _fetchTeams(); // Refresh to update member counts if visible
+        }
+      } else {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: ${res.message}'), backgroundColor: Colors.red));
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lỗi kết nối máy chủ.'), backgroundColor: Colors.red));
+      }
+    }
   }
 
   Widget _buildTeamsTab() {

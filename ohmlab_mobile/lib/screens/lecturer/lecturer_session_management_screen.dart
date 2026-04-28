@@ -300,8 +300,8 @@ class _GroupsTabState extends State<_GroupsTab> {
 
     // 1. Tìm kiếm Offline theo Tên, Mã SV hoặc ID
     final filtered = _originalStudents.where((student) {
-       final name = (student['fullName'] ?? student['username'] ?? student['userFullName'] ?? student['name'] ?? '').toString().toLowerCase();
-       final code = (student['userCode'] ?? student['mssv'] ?? student['userNumberCode'] ?? student['userRollNumber'] ?? '').toString().toLowerCase();
+       final name = (student['userFullName'] ?? student['userName'] ?? student['fullName'] ?? student['username'] ?? student['name'] ?? student['user']?['userFullName'] ?? '').toString().toLowerCase();
+       final code = (student['userCode'] ?? student['studentCode'] ?? student['mssv'] ?? student['userNumberCode'] ?? student['userRollNumber'] ?? student['user']?['userCode'] ?? '').toString().toLowerCase();
        final stringId = student['id']?.toString().toLowerCase() ?? '';
        
        return name.contains(query) || code.contains(query) || stringId.contains(query);
@@ -479,8 +479,10 @@ class _GroupsTabState extends State<_GroupsTab> {
                 title: const Text('Danh sách Sinh Viên', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 subtitle: Text('Sĩ số: ${_students.length}', style: const TextStyle(color: Color(0xFF4CAF50), fontWeight: FontWeight.bold, fontSize: 13)),
                 children: _students.map((student) {
-                   final name = student['fullName'] ?? student['username'] ?? student['userFullName'] ?? student['name'] ?? 'Unknown Student';
-                   final code = student['userCode'] ?? student['mssv'] ?? student['userNumberCode'] ?? student['userRollNumber'] ?? '';
+                   final name = student['userFullName'] ?? student['userName'] ?? student['fullName'] ?? student['username'] ?? 
+                                student['name'] ?? student['user']?['userFullName'] ?? student['user']?['userName'] ?? 'Unknown Student';
+                   final code = student['userCode'] ?? student['studentCode'] ?? student['mssv'] ?? student['userNumberCode'] ?? student['userRollNumber'] ?? 
+                                student['user']?['userCode'] ?? '';
                    
                    return ListTile(
                      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),

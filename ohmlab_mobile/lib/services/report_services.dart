@@ -45,6 +45,17 @@ class ReportService {
     return ApiResponse.fromResponse(response);
   }
 
+  Future<ApiResponse> verifyKitQR(String id, String qr) async {
+    final response = await _apiService.defaultDio.post(
+      '/api/kit/qr',
+      queryParameters: {
+        'id': id,
+        'QR': qr
+      },
+    );
+    return ApiResponse.fromResponse(response);
+  }
+
   Future<ApiResponse> getMyReports() async {
     final response = await _apiService.defaultDio.get('/api/report/my-reports');
     return ApiResponse.fromResponse(response);

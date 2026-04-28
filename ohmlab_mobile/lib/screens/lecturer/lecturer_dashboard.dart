@@ -8,6 +8,7 @@ import 'lecturer_session_management_screen.dart';
 import 'lecturer_schedule_hub_screen.dart';
 import 'lecturer_report_hub_screen.dart';
 import 'lecturer_equipment_hub_screen.dart';
+import 'lecturer_kit_hub_screen.dart';
 
 class LecturerDashboard extends StatefulWidget {
   const LecturerDashboard({super.key});
@@ -335,6 +336,8 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
         _buildActionCard(context, 'Schedule', Icons.schedule, LecturerScheduleHubScreen(lecturerId: _lecturerId ?? '')),
         const SizedBox(height: 16),
         _buildActionCard(context, 'Equipment', Icons.qr_code_scanner, const LecturerEquipmentHubScreen()),
+        const SizedBox(height: 16),
+        _buildActionCard(context, 'Kit Management', Icons.inventory_2, const LecturerKitHubScreen()),
         const SizedBox(height: 16),
         _buildActionCard(context, 'Report', Icons.report_problem, const LecturerReportHubScreen()),
       ],

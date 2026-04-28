@@ -7,7 +7,8 @@ import 'student_schedule_screen.dart';
 import '../common/common_report_incident_screen.dart';
 import 'student_lab_instructions_screen.dart';
 import '../common/daily_schedule_screen.dart';
-import 'package:ohm_lab_mobile/screens/student/student_equipment_history_screen.dart';
+import 'student_lab_instructions_screen.dart';
+import '../common/daily_schedule_screen.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -296,8 +297,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
         _buildActionCard(context, 'Schedule', Icons.today, const DailyScheduleScreen()),
         const SizedBox(height: 16),
         _buildActionCard(context, 'Timetable', Icons.calendar_view_week, const StudentScheduleScreen()),
-        const SizedBox(height: 16),
-        _buildActionCard(context, 'Equipment History', Icons.hardware, const StudentEquipmentHistoryScreen()),
         const SizedBox(height: 16),
         _buildActionCard(context, 'Report', Icons.report_problem, const CommonReportIncidentScreen()),
         const SizedBox(height: 16),
