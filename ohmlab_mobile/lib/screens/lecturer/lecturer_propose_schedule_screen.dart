@@ -244,26 +244,45 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
       itemCount: _schedules.length,
       itemBuilder: (context, index) {
         final schedule = _schedules[index];
-        // Safely extract whatever payload might look like
-        final String title = schedule['registrationScheduleName']?.toString() ?? schedule['title']?.toString() ?? schedule['scheduleName']?.toString() ?? 'Lịch Đăng Ký #${index + 1}';
-        
-        // Parse date gracefully (backend returns ISO format)
-        String rawDate = schedule['registrationScheduleDate']?.toString() ?? schedule['date']?.toString() ?? 'N/A';
-        String formattedDate = rawDate;
-        if (rawDate != 'N/A') {
+
+        // Title: BE có thể null → dùng fallback
+        final String title = schedule['registrationScheduleName']?.toString()
+            ?? 'Lịch Đăng Ký #${index + 1}';
+
+        // Parse date gracefully — BE trả '0001-01-01T00:00:00' khi chưa mapping
+        String formattedDate = 'Chưa xác định';
+        final String rawDate = schedule['registrationScheduleDate']?.toString() ?? '';
+        if (rawDate.isNotEmpty) {
           try {
             final parsedDate = DateTime.parse(rawDate).toLocal();
-            formattedDate = '${parsedDate.day.toString().padLeft(2, '0')}/${parsedDate.month.toString().padLeft(2, '0')}/${parsedDate.year}';
-          } catch (e) {
-            formattedDate = rawDate; // Fallback to raw if parsing fails
-          }
+            if (parsedDate.year > 1) {
+              formattedDate = '${parsedDate.day.toString().padLeft(2, '0')}'
+                  '/${parsedDate.month.toString().padLeft(2, '0')}'
+                  '/${parsedDate.year}';
+            }
+          } catch (_) {}
         }
-        
-        final String status = schedule['status']?.toString() ?? 'Đã đăng ký';
-        final String desc = schedule['registrationScheduleDescription']?.toString() ?? schedule['description']?.toString() ?? '';
-        final String roomId = schedule['roomId']?.toString() ?? '';
-        final String slotId = schedule['slotId']?.toString() ?? '';
-        
+
+        // Các field thực tế từ API response
+        final String teacherName     = schedule['teacherName']?.toString() ?? '';
+        final String teacherRollNum  = schedule['teacherRollNumber']?.toString() ?? '';
+        final String className       = schedule['className']?.toString() ?? '';
+        final String labName         = schedule['labName']?.toString() ?? '';
+        final String roomName        = schedule['roomName']?.toString() ?? '';
+        final String slotName        = schedule['slotName']?.toString() ?? '';
+        final String slotStart       = schedule['slotStartTime']?.toString() ?? '';
+        final String slotEnd         = schedule['slotEndTime']?.toString() ?? '';
+        final String desc            = schedule['registrationScheduleDescription']?.toString() ?? '';
+        final String note            = schedule['registrationScheduleNote']?.toString() ?? '';
+
+        final String rawStatus = schedule['registrationScheduleStatus']?.toString() ?? '';
+        final String statusLabel = rawStatus.isNotEmpty ? rawStatus : 'Đã đăng ký';
+        final Color statusColor = rawStatus.toLowerCase().contains('cancel') || rawStatus.toLowerCase().contains('reject')
+            ? Colors.red
+            : rawStatus.toLowerCase().contains('approv')
+                ? Colors.green
+                : Colors.blue;
+
         return Container(
           margin: const EdgeInsets.only(bottom: 20),
           padding: const EdgeInsets.all(20),
@@ -277,50 +296,110 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ── Header: Icon + Title + Status badge ──
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: const Color(0xFFFFF0E5), borderRadius: BorderRadius.circular(8)),
-                        child: const Icon(Icons.calendar_month, color: Color(0xFFF26F21), size: 18),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(title, overflow: TextOverflow.ellipsis, maxLines: 2, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
-                      ),
-                    ],
-                  ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(color: const Color(0xFFFFF0E5), borderRadius: BorderRadius.circular(8)),
+                    child: const Icon(Icons.calendar_month, color: Color(0xFFF26F21), size: 18),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF1E1E1E), letterSpacing: -0.5),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
+                      color: statusColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Text(
-                      status,
-                      style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 12),
-                    ),
-                  )
+                    child: Text(statusLabel, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 11)),
+                  ),
                 ],
               ),
+
               const SizedBox(height: 16),
               const Divider(height: 1, color: Color(0xFFEEEEEE)),
               const SizedBox(height: 16),
+
+              // ── Giảng viên ──
+              if (teacherName.isNotEmpty) ...[
+                _buildInfoRow(
+                  Icons.person_outline,
+                  'GV',
+                  teacherRollNum.isNotEmpty ? '$teacherName ($teacherRollNum)' : teacherName,
+                ),
+                const SizedBox(height: 10),
+              ],
+
+              // ── Lớp + Lab ──
+              if (className.isNotEmpty || labName.isNotEmpty) ...[
+                Row(
+                  children: [
+                    if (className.isNotEmpty)
+                      Expanded(child: _buildInfoChip(Icons.class_outlined, 'Lớp', className, const Color(0xFF3F51B5))),
+                    if (className.isNotEmpty && labName.isNotEmpty) const SizedBox(width: 10),
+                    if (labName.isNotEmpty)
+                      Expanded(child: _buildInfoChip(Icons.science_outlined, 'Lab', labName, const Color(0xFF009688))),
+                  ],
+                ),
+                const SizedBox(height: 10),
+              ],
+
+              // ── Phòng + Slot ──
+              if (roomName.isNotEmpty || slotName.isNotEmpty) ...[
+                Row(
+                  children: [
+                    if (roomName.isNotEmpty)
+                      Expanded(child: _buildInfoChip(Icons.meeting_room_outlined, 'Phòng', roomName, const Color(0xFFF26F21))),
+                    if (roomName.isNotEmpty && slotName.isNotEmpty) const SizedBox(width: 10),
+                    if (slotName.isNotEmpty)
+                      Expanded(child: _buildInfoChip(Icons.access_time_outlined, 'Slot', slotName, const Color(0xFF795548))),
+                  ],
+                ),
+                const SizedBox(height: 10),
+              ],
+
+              // ── Giờ học ──
+              if (slotStart.isNotEmpty || slotEnd.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF0E5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.schedule, size: 15, color: Color(0xFFF26F21)),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${slotStart.isNotEmpty ? slotStart : '--:--'}  →  ${slotEnd.isNotEmpty ? slotEnd : '--:--'}',
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFFF26F21)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
+
+              // ── Ngày ──
               _buildInfoRow(Icons.calendar_today_outlined, 'Ngày', formattedDate),
-              if (roomId.isNotEmpty && roomId != '0') ...[
-                const SizedBox(height: 12),
-                _buildInfoRow(Icons.meeting_room_outlined, 'Phòng', roomId),
-              ],
-              if (slotId.isNotEmpty && slotId != '0') ...[
-                const SizedBox(height: 12),
-                _buildInfoRow(Icons.access_time_outlined, 'Slot', slotId),
-              ],
+
+              // ── Mô tả / Ghi chú ──
               if (desc.isNotEmpty) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 _buildInfoRow(Icons.description_outlined, 'Mô tả', desc),
+              ],
+              if (note.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                _buildInfoRow(Icons.note_outlined, 'Ghi chú', note),
               ],
             ],
           ),
@@ -333,15 +412,42 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: Colors.grey[500]),
-        const SizedBox(width: 12),
+        Icon(icon, size: 16, color: Colors.grey[500]),
+        const SizedBox(width: 10),
         SizedBox(
-          width: 60,
-          child: Text(label, style: TextStyle(color: Colors.grey[500], fontSize: 14, fontWeight: FontWeight.w500)),
+          width: 50,
+          child: Text(label, style: TextStyle(color: Colors.grey[500], fontSize: 13, fontWeight: FontWeight.w500)),
         ),
-        const SizedBox(width: 8),
-        Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF1E1E1E)))),
+        const SizedBox(width: 6),
+        Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF1E1E1E)))),
       ],
+    );
+  }
+
+  Widget _buildInfoChip(IconData icon, String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.07),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(fontSize: 10, color: color.withOpacity(0.8), fontWeight: FontWeight.w600, letterSpacing: 0.3)),
+                const SizedBox(height: 2),
+                Text(value, style: TextStyle(fontSize: 13, color: color, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

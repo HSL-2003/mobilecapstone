@@ -36,7 +36,7 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
         }
 
         final String? lecturerId = userData['id']?.toString() ?? userData['userId']?.toString();
-        
+
         if (lecturerId != null) {
           final histResponse = await _userService.searchTeamEquipmentByLecturerId(lecturerId: lecturerId);
           if (histResponse.status == 200 || histResponse.status == 201) {
@@ -69,12 +69,12 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
           }
         }
       } else {
-         if (mounted) {
+        if (mounted) {
           setState(() {
             _isLoading = false;
             _errorMessage = 'Lỗi xác thực người dùng.';
           });
-         }
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -123,7 +123,7 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
           ),
         ),
       ),
-      body: _isLoading 
+      body: _isLoading
         ? const Center(child: CircularProgressIndicator(color: Color(0xFFF26F21)))
         : _errorMessage != null
           ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(_errorMessage!, style: const TextStyle(color: Colors.red))))
@@ -134,8 +134,7 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
                 itemCount: _equipmentHistory.length,
                 itemBuilder: (context, index) {
                   final hist = _equipmentHistory[index];
-                  
-                  // Map API fields safely based on REAL JSON schema
+
                   final String rawBorrowDate = hist['teamEquipmentDateBorrow']?.toString() ?? '';
                   String displayDate = 'N/A';
                   String borrowTime = 'N/A';
@@ -160,11 +159,11 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
                   final String className = hist['className']?.toString() ?? '';
                   final String equipmentName = hist['equipmentName']?.toString() ?? 'Unnamed Equipment';
                   final String eqCode = hist['equipmentCode']?.toString() ?? '-';
-                  
+
                   final String rawStatus = hist['teamEquipmentStatus']?.toString() ?? 'Unknown';
                   final String status = rawStatus == 'AreBorrowing' ? 'Đang sử dụng' : (rawStatus == 'GiveBack' ? 'Đã trả' : rawStatus);
                   final Color statusColor = status == 'Đã trả' ? Colors.green : Colors.orange;
-                  
+
                   final int? teamEquipmentId = int.tryParse(hist['teamEquipmentId']?.toString() ?? '');
 
                   return GestureDetector(
@@ -176,81 +175,78 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
                     child: Container(
                       margin: const EdgeInsets.only(bottom: 20),
                       padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(color: const Color(0xFFFFF0E5), borderRadius: BorderRadius.circular(8)),
-                                  child: const Icon(Icons.handyman, color: Color(0xFFF26F21), size: 18),
-                                ),
-                                const SizedBox(width: 12),
-                                Text(displayDate, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
-                              ],
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: statusColor.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Text(
-                                status,
-                                style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12),
-                              ),
-                            )
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                        const SizedBox(height: 16),
-                        _buildInfoRow(Icons.group_outlined, 'Lớp/Nhóm', '$className - $teamName'),
-                        const SizedBox(height: 12),
-                        _buildInfoRow(Icons.developer_board, 'Thiết bị', '$equipmentName ($eqCode)'),
-                        const SizedBox(height: 20),
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(color: const Color(0xFFF8F9FA), borderRadius: BorderRadius.circular(16)),
-                          child: Row(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _buildTimeBadge(Icons.call_made, 'Mượn: $borrowTime', Colors.blue),
-                              if (returnTime != null && returnTime.isNotEmpty && returnTime != 'null')
-                                _buildTimeBadge(Icons.call_received, 'Trả: $returnTime', Colors.green)
-                              else if (teamEquipmentId != null)
-                                OutlinedButton.icon(
-                                  onPressed: () => _giveBack(teamEquipmentId),
-                                  icon: const Icon(Icons.assignment_return, size: 16),
-                                  label: const Text('Thu hồi đồ'),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: const Color(0xFFF26F21),
-                                    side: const BorderSide(color: Color(0xFFF26F21)),
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                                    minimumSize: const Size(0, 32),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(color: const Color(0xFFFFF0E5), borderRadius: BorderRadius.circular(8)),
+                                    child: const Icon(Icons.handyman, color: Color(0xFFF26F21), size: 18),
                                   ),
-                                )
-                              else
-                                _buildTimeBadge(Icons.timer, 'Chưa trả', Colors.orange),
+                                  const SizedBox(width: 12),
+                                  Text(displayDate, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
+                                ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Text(status, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12)),
+                              ),
                             ],
                           ),
-                        )
-                      ],
+                          const SizedBox(height: 16),
+                          const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                          const SizedBox(height: 16),
+                          _buildInfoRow(Icons.group_outlined, 'Lớp/Nhóm', '$className - $teamName'),
+                          const SizedBox(height: 12),
+                          _buildInfoRow(Icons.developer_board, 'Thiết bị', '$equipmentName ($eqCode)'),
+                          const SizedBox(height: 20),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(color: const Color(0xFFF8F9FA), borderRadius: BorderRadius.circular(16)),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                _buildTimeBadge(Icons.call_made, 'Mượn: $borrowTime', Colors.blue),
+                                if (returnTime != null && returnTime.isNotEmpty && returnTime != 'null')
+                                  _buildTimeBadge(Icons.call_received, 'Trả: $returnTime', Colors.green)
+                                else if (teamEquipmentId != null)
+                                  OutlinedButton.icon(
+                                    onPressed: () => _giveBack(teamEquipmentId),
+                                    icon: const Icon(Icons.assignment_return, size: 16),
+                                    label: const Text('Thu hồi đồ'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: const Color(0xFFF26F21),
+                                      side: const BorderSide(color: Color(0xFFF26F21)),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                                      minimumSize: const Size(0, 32),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                  )
+                                else
+                                  _buildTimeBadge(Icons.timer, 'Chưa trả', Colors.orange),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+              ),
     );
   }
 

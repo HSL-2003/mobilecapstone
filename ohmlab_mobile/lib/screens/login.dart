@@ -32,11 +32,12 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      
-      // Prepare data for API call
-      // Prepare data for API call (Chỉ gửi googleId theo yêu cầu backend)
+
+      // Gửi idToken (JWT) thay vì googleUser.id
+      // Web dùng Google GSI cũng gửi JWT credential → BE verify JWT → lấy email → check DB
       final Map<String, dynamic> loginData = {
-        'googleId': googleUser.id,
+        'googleId': googleAuth.idToken,   // JWT token, khớp với web
+        'email': googleUser.email,
       };
 
       // Call the loginGoogle API
@@ -94,22 +95,34 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         // Handle login error
         if (mounted) {
+          final String errorMsg = response.message ?? 'Lỗi đăng nhập: ${response.status}';
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Tài khoản không tồn tại, vui lòng liên hệ admin cung cấp tài khoản'),
+            SnackBar(
+              content: Text('Lỗi: $errorMsg\nData: ${response.data}'),
               backgroundColor: Colors.red,
-              duration: Duration(seconds: 4),
+              duration: const Duration(seconds: 6),
             ),
           );
         }
       }
     } catch (error) {
       if (mounted) {
+        String errorText = error.toString();
+        // Cố gắng parse chi tiết lỗi nếu là DioException
+        if (error.runtimeType.toString() == 'DioException' || error.runtimeType.toString() == 'DioError') {
+          dynamic dioError = error;
+          if (dioError.response != null) {
+            errorText = 'Mã lỗi: ${dioError.response?.statusCode}\nChi tiết: ${dioError.response?.data}';
+          } else {
+            errorText = dioError.message ?? errorText;
+          }
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tài khoản không tồn tại, vui lòng liên hệ admin cung cấp tài khoản'),
+          SnackBar(
+            content: Text('Lỗi kết nối/API: $errorText'),
             backgroundColor: Colors.red,
-            duration: Duration(seconds: 4),
+            duration: const Duration(seconds: 8),
           ),
         );
       }
