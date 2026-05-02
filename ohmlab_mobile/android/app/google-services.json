@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "622071074744",
+    "project_id": "ohmlab-mobile",
+    "storage_bucket": "ohmlab-mobile.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:622071074744:android:e9839a700088998e8dc94d",
+        "android_client_info": {
+          "package_name": "com.fuhcm.ohmlab"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCuIlnr84tH9yjjWl1lCYm9WxuLCCc__Rk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

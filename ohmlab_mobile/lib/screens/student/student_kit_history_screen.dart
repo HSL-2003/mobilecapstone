@@ -50,13 +50,13 @@ class _StudentKitHistoryScreenState extends State<StudentKitHistoryScreen> {
             });
           }
         } else {
-          if (mounted) setState(() { _errorMessage = 'Không thể tải lịch sử Kit của nhóm.'; _isLoading = false; });
+          if (mounted) setState(() { _errorMessage = 'Failed to load team Kit history.'; _isLoading = false; });
         }
       } else {
-        if (mounted) setState(() { _errorMessage = 'Hãy vào "Danh sách Team" để xem lịch sử của nhóm bạn.'; _isLoading = false; });
+        if (mounted) setState(() { _errorMessage = 'Please go to \"Team List\" to view your team\'s history.'; _isLoading = false; });
       }
     } catch (e) {
-      if (mounted) setState(() { _errorMessage = 'Lỗi: $e'; _isLoading = false; });
+      if (mounted) setState(() { _errorMessage = 'Error: $e'; _isLoading = false; });
     }
   }
 
@@ -71,7 +71,7 @@ class _StudentKitHistoryScreenState extends State<StudentKitHistoryScreen> {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: AppBar(
-              title: const Text('Lịch sử Kit', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: -0.5, fontSize: 24, color: Colors.white)),
+              title: const Text('Kit History', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: -0.5, fontSize: 24, color: Colors.white)),
               backgroundColor: const Color(0xFFF26F21).withOpacity(0.95),
               elevation: 0,
               iconTheme: const IconThemeData(color: Colors.white),
@@ -85,7 +85,7 @@ class _StudentKitHistoryScreenState extends State<StudentKitHistoryScreen> {
         : _errorMessage != null
           ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(_errorMessage!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red))))
           : _kitHistory.isEmpty
-            ? const Center(child: Text("Nhóm chưa có lịch sử mượn trả Kit.", style: TextStyle(color: Colors.grey)))
+            ? const Center(child: Text("The team has no Kit borrowing history.", style: TextStyle(color: Colors.grey)))
             : ListView.builder(
                 padding: EdgeInsets.only(top: widget.hideAppBar ? 24 : 100, left: 24, right: 24, bottom: 24),
                 itemCount: _kitHistory.length,
@@ -112,15 +112,15 @@ class _StudentKitHistoryScreenState extends State<StudentKitHistoryScreen> {
                     } catch (_) {}
                   }
 
-                  final String teamName = hist['teamName']?.toString() ?? 'Nhóm';
+                  final String teamName = hist['teamName']?.toString() ?? 'Team';
                   final String className = hist['className']?.toString() ?? '';
                   final String kitName = hist['kitName']?.toString() ?? 'Kit';
                   final String kitCode = hist['kitId']?.toString() ?? hist['kitCode']?.toString() ?? '-';
                    final String? kitImgUrl = hist['kitImgUrl']?.toString();
                   
                   final String rawStatus = hist['teamKitStatus']?.toString() ?? 'Unknown';
-                  final String status = rawStatus == 'AreBorrowing' ? 'Đang sử dụng' : (rawStatus == 'GiveBack' ? 'Đã trả' : (rawStatus == 'Paid' ? 'Đã trả' : rawStatus));
-                  final Color statusColor = (status == 'Đã trả') ? Colors.green : Colors.orange;
+                  final String status = rawStatus == 'AreBorrowing' ? 'In Use' : (rawStatus == 'GiveBack' ? 'Returned' : (rawStatus == 'Paid' ? 'Returned' : rawStatus));
+                  final Color statusColor = (status == 'Returned') ? Colors.green : Colors.orange;
                   
                   final int? teamKitId = int.tryParse(hist['teamKitId']?.toString() ?? '');
 
@@ -176,7 +176,7 @@ class _StudentKitHistoryScreenState extends State<StudentKitHistoryScreen> {
                         const SizedBox(height: 16),
                         const Divider(height: 1, color: Color(0xFFEEEEEE)),
                         const SizedBox(height: 16),
-                        _buildInfoRow(Icons.group_outlined, 'Lớp/Nhóm', '$className - $teamName'),
+                        _buildInfoRow(Icons.group_outlined, 'Class/Team', '$className - $teamName'),
                         const SizedBox(height: 12),
                         _buildInfoRow(Icons.developer_board, 'Kit', '$kitName ($kitCode)'),
                         const SizedBox(height: 20),
@@ -186,11 +186,11 @@ class _StudentKitHistoryScreenState extends State<StudentKitHistoryScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _buildTimeBadge(Icons.call_made, 'Mượn: $borrowTime', Colors.blue),
+                              _buildTimeBadge(Icons.call_made, 'Borrow: $borrowTime', Colors.blue),
                               if (returnTime != null && returnTime.isNotEmpty && returnTime != 'null')
-                                _buildTimeBadge(Icons.call_received, 'Trả: $returnTime', Colors.green)
+                                _buildTimeBadge(Icons.call_received, 'Return: $returnTime', Colors.green)
                               else
-                                _buildTimeBadge(Icons.timer, 'Chưa trả', Colors.orange),
+                                _buildTimeBadge(Icons.timer, 'Not Returned', Colors.orange),
                             ],
                           ),
                         )

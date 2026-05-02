@@ -105,7 +105,7 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
           setState(() {
             _isLoading = false;
             _schedules = [];
-            _error = res.message ?? "Không tìm thấy lịch đăng ký với ID này.";
+            _error = res.message ?? "Registration schedule with this ID not found.";
           });
         }
       }
@@ -113,7 +113,7 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = "Lỗi kết nối máy chủ.";
+          _error = "Server connection error.";
         });
       }
     }
@@ -177,7 +177,7 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Tìm theo ID...',
+                hintText: 'Search by ID...',
                 prefixIcon: const Icon(Icons.search, color: Color(0xFFF26F21)),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.arrow_forward, color: Color(0xFFF26F21)),
@@ -235,7 +235,7 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
     }
     if (_schedules.isEmpty) {
       return const Center(
-        child: Text("Không có dữ liệu lịch đăng ký.", style: TextStyle(fontSize: 16, color: Colors.grey)),
+        child: Text("No registration schedule data.", style: TextStyle(fontSize: 16, color: Colors.grey)),
       );
     }
 
@@ -250,7 +250,7 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
             ?? 'Lịch Đăng Ký #${index + 1}';
 
         // Parse date gracefully — BE trả '0001-01-01T00:00:00' khi chưa mapping
-        String formattedDate = 'Chưa xác định';
+        String formattedDate = 'Unknown';
         final String rawDate = schedule['registrationScheduleDate']?.toString() ?? '';
         if (rawDate.isNotEmpty) {
           try {
@@ -276,7 +276,7 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
         final String note            = schedule['registrationScheduleNote']?.toString() ?? '';
 
         final String rawStatus = schedule['registrationScheduleStatus']?.toString() ?? '';
-        final String statusLabel = rawStatus.isNotEmpty ? rawStatus : 'Đã đăng ký';
+        final String statusLabel = rawStatus.isNotEmpty ? rawStatus : 'Registered';
         final Color statusColor = rawStatus.toLowerCase().contains('cancel') || rawStatus.toLowerCase().contains('reject')
             ? Colors.red
             : rawStatus.toLowerCase().contains('approv')
@@ -343,7 +343,7 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
                 Row(
                   children: [
                     if (className.isNotEmpty)
-                      Expanded(child: _buildInfoChip(Icons.class_outlined, 'Lớp', className, const Color(0xFF3F51B5))),
+                      Expanded(child: _buildInfoChip(Icons.class_outlined, 'Class', className, const Color(0xFF3F51B5))),
                     if (className.isNotEmpty && labName.isNotEmpty) const SizedBox(width: 10),
                     if (labName.isNotEmpty)
                       Expanded(child: _buildInfoChip(Icons.science_outlined, 'Lab', labName, const Color(0xFF009688))),
@@ -483,7 +483,7 @@ class _CreateScheduleFormState extends State<_CreateScheduleForm> {
         _slotIdController.text.isEmpty ||
         _selectedDate == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng nhập đủ các trường bắt buộc!')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter all required fields!')));
       }
       return;
     }
@@ -510,17 +510,17 @@ class _CreateScheduleFormState extends State<_CreateScheduleForm> {
         if (mounted) {
           Navigator.pop(context); // Close bottom sheet
           widget.onCreated();
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tạo lịch đăng ký thành công!')));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Registration schedule created successfully!')));
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: ${res.message ?? "Không thể tạo lịch."}')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${res.message ?? "Could not create schedule."}')));
         }
       }
     } catch (e) {
       setState(() => _isSaving = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lỗi kết nối máy chủ.')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Server connection error.')));
       }
     }
   }
@@ -582,7 +582,7 @@ class _CreateScheduleFormState extends State<_CreateScheduleForm> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Tạo lịch đăng ký mới', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF1E1E1E))),
+            const Text('Create new registration schedule', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF1E1E1E))),
             const SizedBox(height: 24),
             _buildField('Tên lịch đăng ký *', _nameController),
             Row(

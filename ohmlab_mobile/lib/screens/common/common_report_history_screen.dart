@@ -52,7 +52,7 @@ class _CommonReportHistoryScreenState extends State<CommonReportHistoryScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = "Lỗi kết nối máy chủ.";
+          _error = "Server connection error.";
         });
       }
     }
@@ -104,7 +104,7 @@ class _CommonReportHistoryScreenState extends State<CommonReportHistoryScreen> {
                   _fetchReports();
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF26F21)),
-                child: const Text('Thử lại', style: TextStyle(color: Colors.white)),
+                child: const Text('Retry', style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
@@ -181,12 +181,12 @@ class _CommonReportHistoryScreenState extends State<CommonReportHistoryScreen> {
                       const SizedBox(height: 16),
                       _buildInfoRow(Icons.calendar_today_outlined, 'Ngày gửi', dateStr),
                       const SizedBox(height: 12),
-                      _buildInfoRow(Icons.class_outlined, 'Lớp', '$classStr - $slotStr'),
+                      _buildInfoRow(Icons.class_outlined, 'Class', '$classStr - $slotStr'),
                       const SizedBox(height: 12),
                       _buildInfoRow(Icons.warning_amber_rounded, 'Sự cố', categoryStr),
                       if (equipStr.isNotEmpty) ...[
                         const SizedBox(height: 12),
-                        _buildInfoRow(Icons.qr_code_scanner, 'Thiết bị', equipStr),
+                        _buildInfoRow(Icons.qr_code_scanner, 'Equipment', equipStr),
                       ]
                     ],
                   ),

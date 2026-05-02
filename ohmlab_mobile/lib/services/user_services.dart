@@ -143,10 +143,29 @@ class UserService {
     return ApiResponse.fromResponse(response);
   }
 
+  Future<ApiResponse> getAllRegistrationSchedules({String status = '', String keyword = ''}) async {
+    final response = await _apiService.defaultDio.post(
+      '/api/registrationschedule/search',
+      data: {
+        'pageNum': 1,
+        'pageSize': 100,
+        'keyWord': keyword.isEmpty ? null : keyword,
+        'status': status.isEmpty ? null : status,
+      },
+    );
+    return ApiResponse.fromResponse(response);
+  }
+
   Future<ApiResponse> getRegistrationScheduleById(String id) async {
     final response = await _apiService.defaultDio.get('/api/registrationschedule/registrationschedule/$id');
     return ApiResponse.fromResponse(response);
   }
+
+  Future<ApiResponse> getTeamMembers(int teamId) async {
+    final response = await _apiService.defaultDio.get('/api/teamuser/team/$teamId');
+    return ApiResponse.fromResponse(response);
+  }
+
 
   Future<ApiResponse> borrowEquipment(Map<String, dynamic> payload) async {
     final response = await _apiService.defaultDio.post(
@@ -249,6 +268,28 @@ class UserService {
         "pageSize": pageSize,
         "keyword": keyword.isEmpty ? null : keyword,
         "status": status.isEmpty ? null : status,
+      },
+    );
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> securityCheckIn(int registrationScheduleId, int roomId) async {
+    final response = await _apiService.defaultDio.post(
+      '/api/security/checkin',
+      data: {
+        'registrationScheduleId': registrationScheduleId,
+        'roomId': roomId,
+      },
+    );
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> lecturerCheckOut(int registrationScheduleId, String imageUrl) async {
+    final response = await _apiService.defaultDio.post(
+      '/api/registrationschedule/lecturercheckout',
+      data: {
+        'registrationScheduleId': registrationScheduleId,
+        'registraionSchedule_Url_Img_Checkout': imageUrl,
       },
     );
     return ApiResponse.fromResponse(response);

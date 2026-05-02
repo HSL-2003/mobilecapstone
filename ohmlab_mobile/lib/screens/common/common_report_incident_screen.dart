@@ -336,7 +336,7 @@ class _CommonReportIncidentScreenState extends State<CommonReportIncidentScreen>
                                 } catch (e) {
                                   Navigator.pop(context);
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Lỗi kết nối máy chủ!'), backgroundColor: Colors.red),
+                                    const SnackBar(content: Text('Server connection error.'), backgroundColor: Colors.red),
                                   );
                                 }
                               }

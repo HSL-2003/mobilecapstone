@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'security_room_status_screen.dart';
+import 'security_checkin_screen.dart';
 
 class SecurityDashboard extends StatelessWidget {
   const SecurityDashboard({super.key});
@@ -44,6 +45,8 @@ class SecurityDashboard extends StatelessWidget {
               const SizedBox(height: 32),
               const Text('Quick Actions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
               const SizedBox(height: 16),
+              _buildActionCard(context, 'Lab Check-in', 'Confirm key handover to lecturer', const SecurityCheckInScreen()),
+              const SizedBox(height: 12),
               _buildActionCard(context, 'Update Room Status', 'Manage lab availability state', const SecurityRoomStatusScreen()),
               const SizedBox(height: 12),
               _buildActionCard(context, 'Timetable Viewer', 'Check daily class schedules', null),

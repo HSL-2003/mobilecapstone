@@ -134,14 +134,14 @@ class _EquipmentTabState extends State<_EquipmentTab> {
       Navigator.pop(context);
       
       if (res.status == 200 || res.status == 201) {
-         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Xác nhận thiết bị hợp lệ!'), backgroundColor: Colors.green));
+         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Valid equipment confirmed!'), backgroundColor: Colors.green));
          _qrController.clear();
       } else {
-         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res.message ?? 'Mã thiết bị không hợp lệ'), backgroundColor: Colors.red));
+         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res.message ?? 'Invalid equipment code'), backgroundColor: Colors.red));
       }
     } catch (e) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lỗi kết nối kiểm tra mã QR'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('QR code check connection error'), backgroundColor: Colors.red));
     }
   }
 
@@ -150,7 +150,7 @@ class _EquipmentTabState extends State<_EquipmentTab> {
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
-        const Text('Quét mã thiết bị (QR Check)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
+        const Text('Scan Equipment Code (QR Check)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(20),
@@ -162,7 +162,7 @@ class _EquipmentTabState extends State<_EquipmentTab> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Nhập hoặc quét mã thiết bị để xác nhận bộ dụng cụ cho buổi Lab.', style: TextStyle(color: Colors.black54, fontSize: 13, height: 1.5)),
+              const Text('Enter or scan equipment code to confirm kit for the Lab session.', style: TextStyle(color: Colors.black54, fontSize: 13, height: 1.5)),
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -170,7 +170,7 @@ class _EquipmentTabState extends State<_EquipmentTab> {
                     child: TextFormField(
                       controller: _qrController,
                       decoration: InputDecoration(
-                        hintText: 'Mã QR (VD: OSC-01)',
+                        hintText: 'QR Code (e.g., OSC-01)',
                         filled: true,
                         fillColor: Colors.grey[50], // Soft fill
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
@@ -197,7 +197,7 @@ class _EquipmentTabState extends State<_EquipmentTab> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                       ),
-                      child: const Text('Kiểm tra', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                      child: const Text('Check', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
                     ),
                   ),
                 ],
@@ -211,7 +211,7 @@ class _EquipmentTabState extends State<_EquipmentTab> {
         if (_isLoadingEquip)
           const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(color: Color(0xFFF26F21))))
         else if (_equipments.isEmpty)
-           const Center(child: Padding(padding: EdgeInsets.all(20), child: Text('Không có dữ liệu thiết bị cấp phát.', style: TextStyle(color: Colors.grey))))
+           const Center(child: Padding(padding: EdgeInsets.all(20), child: Text('No issued equipment data.', style: TextStyle(color: Colors.grey))))
         else
            ..._equipments.map((equip) {
               final name = equip['equipmentName'] ?? equip['name'] ?? equip['equipmentCode'] ?? 'Unknown Equipment';
@@ -339,12 +339,12 @@ class _GroupsTabState extends State<_GroupsTab> {
              });
           }
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res.message ?? 'Không tìm thấy thành viên!'), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res.message ?? 'Member not found!'), backgroundColor: Colors.red));
           setState(() { _students = []; });
         }
       } catch (e) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lỗi kết nối tra cứu API'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('API lookup connection error'), backgroundColor: Colors.red));
         setState(() { _students = []; });
       }
     } else {
@@ -356,13 +356,13 @@ class _GroupsTabState extends State<_GroupsTab> {
   Future<void> _fetchUsers() async {
     final teamIdRaw = widget.teamData?['teamId'] ?? widget.teamData?['id'];
     if (teamIdRaw == null) {
-      if (mounted) setState(() { _isLoading = false; _errorMessage = 'Không có thông tin '; });
+      if (mounted) setState(() { _isLoading = false; _errorMessage = 'No information '; });
       return;
     }
 
     final int? teamId = int.tryParse(teamIdRaw.toString());
     if (teamId == null) {
-      if (mounted) setState(() { _isLoading = false; _errorMessage = 'ID không hợp lệ'; });
+      if (mounted) setState(() { _isLoading = false; _errorMessage = 'Invalid ID'; });
       return;
     }
 
@@ -381,10 +381,10 @@ class _GroupsTabState extends State<_GroupsTab> {
            });
         }
       } else {
-        if (mounted) setState(() { _isLoading = false; _errorMessage = 'Lỗi lấy sinh viên: ${res.message ?? res.status}'; });
+        if (mounted) setState(() { _isLoading = false; _errorMessage = 'Error getting student: ${res.message ?? res.status}'; });
       }
     } catch (e) {
-      if (mounted) setState(() { _isLoading = false; _errorMessage = 'Lỗi kết nối API'; });
+      if (mounted) setState(() { _isLoading = false; _errorMessage = 'API connection error'; });
     }
   }
 
@@ -400,7 +400,7 @@ class _GroupsTabState extends State<_GroupsTab> {
               child: TextFormField(
                 controller: _searchController,
                 decoration: InputDecoration(
-                  hintText: 'Tìm theo Tên, Mã SV hoặc ID...',
+                  hintText: 'Search by Name, Student Code or ID...',
                   filled: true,
                   fillColor: Colors.grey[50],
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20),
@@ -462,7 +462,7 @@ class _GroupsTabState extends State<_GroupsTab> {
           const Center(
             child: Padding(
               padding: EdgeInsets.all(40.0),
-              child: Text('Không có dữ liệu thành viên phù hợp.', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
+              child: Text('No matching member data.', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
             ),
           )
         else
@@ -476,8 +476,8 @@ class _GroupsTabState extends State<_GroupsTab> {
               data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
               child: ExpansionTile(
                 initiallyExpanded: true,
-                title: const Text('Danh sách Sinh Viên', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                subtitle: Text('Sĩ số: ${_students.length}', style: const TextStyle(color: Color(0xFF4CAF50), fontWeight: FontWeight.bold, fontSize: 13)),
+                title: const Text('Student List', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                subtitle: Text('Class Size: ${_students.length}', style: const TextStyle(color: Color(0xFF4CAF50), fontWeight: FontWeight.bold, fontSize: 13)),
                 children: _students.map((student) {
                    final name = student['userFullName'] ?? student['userName'] ?? student['fullName'] ?? student['username'] ?? 
                                 student['name'] ?? student['user']?['userFullName'] ?? student['user']?['userName'] ?? 'Unknown Student';

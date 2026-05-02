@@ -13,7 +13,10 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final emailCtrl = TextEditingController();
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+    serverClientId: '955586171979-4ns9kveogoh4kgehar869ut30184pb8e.apps.googleusercontent.com',
+  );
   final UserService _userService = UserService();
   bool _isLoading = false;
 
@@ -23,6 +26,8 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = true;
       });
 
+      // Sign out first to force the account selection prompt
+      await _googleSignIn.signOut();
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
         setState(() {
@@ -95,10 +100,10 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         // Handle login error
         if (mounted) {
-          final String errorMsg = response.message ?? 'Lỗi đăng nhập: ${response.status}';
+          final String errorMsg = response.message ?? 'Login error: ${response.status}';
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Lỗi: $errorMsg\nData: ${response.data}'),
+              content: Text('Error: $errorMsg\nData: ${response.data}'),
               backgroundColor: Colors.red,
               duration: const Duration(seconds: 6),
             ),
@@ -112,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (error.runtimeType.toString() == 'DioException' || error.runtimeType.toString() == 'DioError') {
           dynamic dioError = error;
           if (dioError.response != null) {
-            errorText = 'Mã lỗi: ${dioError.response?.statusCode}\nChi tiết: ${dioError.response?.data}';
+            errorText = 'Error code: ${dioError.response?.statusCode}\nChi tiết: ${dioError.response?.data}';
           } else {
             errorText = dioError.message ?? errorText;
           }
@@ -120,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi kết nối/API: $errorText'),
+            content: Text('Connection/API error: $errorText'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 8),
           ),
@@ -248,14 +253,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             } else {
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Tài khoản không tồn tại, vui lòng liên hệ admin cung cấp tài khoản'), backgroundColor: Colors.red, duration: Duration(seconds: 4)),
+                                  const SnackBar(content: Text('Account does not exist, please contact admin to provide an account'), backgroundColor: Colors.red, duration: Duration(seconds: 4)),
                                 );
                               }
                             }
                           } catch (e) {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Tài khoản không tồn tại, vui lòng liên hệ admin cung cấp tài khoản'), backgroundColor: Colors.red, duration: Duration(seconds: 4)),
+                                const SnackBar(content: Text('Account does not exist, please contact admin to provide an account'), backgroundColor: Colors.red, duration: Duration(seconds: 4)),
                               );
                             }
                           } finally {
@@ -305,7 +310,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             )
                           : Image.asset('assets/images/google.png', height: 24),
                         label: Text(
-                          _isLoading ? 'Đang đăng nhập...' : 'Login with Google',
+                          _isLoading ? 'Logging in...' : 'Login with Google',
                           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1E1E1E)),
                         ),
                         style: OutlinedButton.styleFrom(

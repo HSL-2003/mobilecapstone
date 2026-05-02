@@ -31,7 +31,6 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
   Future<void> _initData() async {
     await _fetchCurrentUser();
     await _fetchTeams();
-    _findMyTeam();
   }
 
   Future<void> _fetchCurrentUser() async {
@@ -44,20 +43,14 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
     } catch (_) {}
   }
 
-  void _findMyTeam() {
-    if (_currentStudentId == null || _teams.isEmpty) return;
-    
-    // We would need to fetch members for each team to strictly find 'my' team,
-    // but for now let's assume we can show 'View Grade' for any team the student clicks
-    // as long as they are authorized by the backend.
-  }
+
 
   Future<void> _fetchTeams() async {
     try {
       final int? classId = int.tryParse(widget.classData['classId']?.toString() ?? '');
       if (classId == null) {
         setState(() {
-          _errorMessage = "Không tìm thấy Class ID.";
+          _errorMessage = "Class ID not found.";
           _isLoading = false;
         });
         return;
@@ -65,24 +58,49 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
 
       final res = await _userService.getTeamsByClassId(classId);
       if (res.status == 200 || res.status == 201) {
+        final payload = res.data;
+        List<dynamic> allTeams = [];
+        if (payload is Map && payload.containsKey('data')) {
+          allTeams = payload['data'] is List ? payload['data'] : [];
+        } else if (payload is List) {
+          allTeams = payload;
+        }
+
+        List<dynamic> myTeams = [];
+        for (var team in allTeams) {
+          final int? rawId = int.tryParse((team['id'] ?? team['teamId'] ?? '').toString());
+          if (rawId != null) {
+            final memberRes = await _userService.getTeamMembers(rawId);
+            if (memberRes.status == 200 || memberRes.status == 201) {
+              final mPayload = memberRes.data;
+              List<dynamic> members = [];
+              if (mPayload is Map && mPayload.containsKey('data')) {
+                members = mPayload['data'] is List ? mPayload['data'] : [];
+              } else if (mPayload is List) {
+                members = mPayload;
+              }
+
+              // Kiểm tra xem user có trong list không
+              bool isMember = members.any((m) => m['userId']?.toString() == _currentStudentId);
+              if (isMember) {
+                team['members'] = members; // Lưu lại members
+                myTeams.add(team);
+              }
+            }
+          }
+        }
+
         if (mounted) {
           setState(() {
+            _teams = myTeams;
             _isLoading = false;
-            final payload = res.data;
-            if (payload is Map && payload.containsKey('data')) {
-              _teams = payload['data'] is List ? payload['data'] : [];
-            } else if (payload is List) {
-              _teams = payload;
-            } else {
-              _teams = [];
-            }
           });
         }
       } else {
         if (mounted) {
           setState(() {
             _isLoading = false;
-            _errorMessage = res.message ?? "Lỗi tải danh sách nhóm.";
+            _errorMessage = res.message ?? "Failed to load team list.";
           });
         }
       }
@@ -90,14 +108,14 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = "Lỗi kết nối máy chủ.";
+          _errorMessage = "Server connection error.";
         });
       }
     }
   }
 
   Widget _buildTeamCard(BuildContext context, Map<String, dynamic> team) {
-    final String teamName = team['teamName'] ?? team['name'] ?? 'Nhóm chưa đặt tên';
+    final String teamName = team['teamName'] ?? team['name'] ?? 'Unnamed Team';
     final String details = "Team ID: ${team['id'] ?? team['teamId'] ?? '-'}";
     final int? rawId = int.tryParse((team['id'] ?? team['teamId'] ?? '').toString());
 
@@ -150,7 +168,7 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Text('Xem điểm', style: TextStyle(color: Color(0xFFF26F21), fontWeight: FontWeight.bold, fontSize: 13)),
+                    const Text('View Grade', style: TextStyle(color: Color(0xFFF26F21), fontWeight: FontWeight.bold, fontSize: 13)),
                     const SizedBox(height: 4),
                     const Icon(Icons.stars, color: Color(0xFFF26F21), size: 18),
                   ],
@@ -161,6 +179,26 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
               const SizedBox(height: 16),
               const Divider(height: 1, color: Color(0xFFF0F0F0)),
               const SizedBox(height: 16),
+              if (team['members'] != null && (team['members'] as List).isNotEmpty) ...[
+                const Text('Team Members:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                const SizedBox(height: 8),
+                ...(team['members'] as List).map((m) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.person, size: 16, color: Colors.grey),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(m['userName'] ?? 'Unknown', style: const TextStyle(fontSize: 14, color: Colors.black87))),
+                        Text(m['userNumberCode'] ?? '', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                const SizedBox(height: 16),
+                const Divider(height: 1, color: Color(0xFFF0F0F0)),
+                const SizedBox(height: 16),
+              ],
               Row(
                 children: [
                   Expanded(
@@ -174,7 +212,7 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
                         );
                       },
                       icon: const Icon(Icons.handyman, size: 16),
-                      label: const Text('Lịch sử thiết bị', style: TextStyle(fontSize: 12)),
+                      label: const Text('Equipment History', style: TextStyle(fontSize: 12)),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFFF26F21),
                         side: BorderSide(color: const Color(0xFFF26F21).withOpacity(0.3)),
@@ -195,7 +233,7 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
                         );
                       },
                       icon: const Icon(Icons.inventory_2, size: 16),
-                      label: const Text('Lịch sử Kit', style: TextStyle(fontSize: 12)),
+                      label: const Text('Kit History', style: TextStyle(fontSize: 12)),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFFF26F21),
                         side: BorderSide(color: const Color(0xFFF26F21).withOpacity(0.3)),
@@ -236,11 +274,11 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
           _showNoGradeInfo(teamName);
         }
       } else {
-        _showErrorDialog('Lỗi: ${res.message ?? "Không thể lấy thông tin điểm."}');
+        _showErrorDialog('Error: ${res.message ?? "Could not get grade information."}');
       }
     } catch (e) {
       Navigator.pop(context);
-      _showErrorDialog('Lỗi kết nối máy chủ.');
+      _showErrorDialog('Server connection error.');
     }
   }
 
@@ -253,7 +291,7 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
           children: [
             const Icon(Icons.military_tech, color: Color(0xFFF26F21), size: 48),
             const SizedBox(height: 8),
-            Text('Điểm số - $teamName', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text('Grade - $teamName', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold)),
           ],
         ),
         content: Column(
@@ -272,13 +310,13 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              data['gradeDescription']?.toString() ?? 'Chưa có nhận xét từ giảng viên.',
+              data['gradeDescription']?.toString() ?? 'No feedback from lecturer yet.',
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.black87, fontSize: 15),
             ),
             const SizedBox(height: 8),
             Text(
-              'Trạng thái: ${data['gradeStatus'] ?? "N/A"}',
+              'Status: ${data['gradeStatus'] ?? "N/A"}',
               style: const TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w500),
             ),
           ],
@@ -286,7 +324,7 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng', style: TextStyle(color: Color(0xFFF26F21), fontWeight: FontWeight.bold)),
+            child: const Text('Close', style: TextStyle(color: Color(0xFFF26F21), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -298,10 +336,10 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Thông báo', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Text('Nhóm $teamName chưa có điểm số cho Lab này.', textAlign: TextAlign.center),
+        title: const Text('Notification', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Text('Team \$teamName does not have a grade for this Lab yet.', textAlign: TextAlign.center),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Đóng')),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
         ],
       ),
     );
@@ -311,7 +349,7 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Lỗi'),
+        title: const Text('Error'),
         content: Text(msg),
         actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
       ),
@@ -326,7 +364,7 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
 
     if (users.isEmpty) {
       return const Center(
-        child: Text('Không có sinh viên nào trong danh sách lớp.', style: TextStyle(color: Colors.grey)),
+        child: Text('No students found in the class list.', style: TextStyle(color: Colors.grey)),
       );
     }
 
@@ -396,7 +434,7 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
                   _fetchTeams();
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF26F21)),
-                child: const Text('Thử lại', style: TextStyle(color: Colors.white)),
+                child: const Text('Retry', style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
@@ -405,7 +443,7 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
     }
     
     if (_teams.isEmpty) {
-      return const Center(child: Text('Không có nhóm nào trong lớp này.', style: TextStyle(color: Colors.grey)));
+      return const Center(child: Text('No teams found in this class.', style: TextStyle(color: Colors.grey)));
     }
     
     return ListView.builder(
@@ -422,7 +460,7 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final String className = widget.classData['className'] ?? 'Chi tiết Lớp';
+    final String className = widget.classData['className'] ?? 'Class Details';
 
     return DefaultTabController(
       length: 2,
@@ -455,8 +493,8 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
                 labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                 tabs: const [
-                  Tab(text: 'Sinh viên (Class Users)'),
-                  Tab(text: 'Danh sách Team'),
+                  Tab(text: 'Students (Class Users)'),
+                  Tab(text: 'Team List'),
                 ],
               ),
             ),

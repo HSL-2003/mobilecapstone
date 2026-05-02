@@ -31,6 +31,9 @@ dependencies:
   shared_preferences: ^2.3.0
   google_fonts: ^8.0.2
 
+  # Image picker for checkout photo
+  image_picker: ^1.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

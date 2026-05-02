@@ -37,7 +37,7 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
               if (payload is Map) {
                 _slots = payload['slots'] ?? [];
                 _totalCount = payload['totalCount'] ?? 0;
-                _todayDate = payload['today'] ?? 'Hôm nay';
+                _todayDate = payload['today'] ?? 'Today';
                 _warnings = payload['warnings'] ?? [];
               } else if (payload is List) {
                 _slots = payload;
@@ -47,10 +47,10 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
           }
         }
       } else {
-        if (mounted) setState(() { _errorMessage = 'Không thể tải báo cáo hôm nay.'; _isLoading = false; });
+        if (mounted) setState(() { _errorMessage = 'Failed to load today\'s report.'; _isLoading = false; });
       }
     } catch (e) {
-      if (mounted) setState(() { _errorMessage = 'Lỗi kết nối máy chủ.'; _isLoading = false; });
+      if (mounted) setState(() { _errorMessage = 'Server connection error.'; _isLoading = false; });
     }
   }
 
@@ -68,7 +68,7 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
       appBar: widget.hideAppBar ? null : AppBar(
-        title: const Text('Lịch trình hôm nay', style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: -0.5)),
+        title: const Text('Today\'s Schedule', style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: -0.5)),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFFF26F21),
         elevation: 0,
@@ -96,21 +96,21 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
                       
                       // Warnings Section (if any)
                       if (_warnings.isNotEmpty) ...[
-                        const Text('Cảnh báo hệ thống', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
+                        const Text('System Warnings', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
                         const SizedBox(height: 12),
                         ..._warnings.map((w) => _buildWarningCard(w.toString())).toList(),
                         const SizedBox(height: 24),
                       ],
 
                       // Slots Section
-                      const Text('Danh sách Slot (Ca học)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
+                      const Text('Slot List (Sessions)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
                       const SizedBox(height: 16),
                       if (_slots.isEmpty)
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey[200]!)),
-                          child: const Text('Hôm nay không có ca học nào được xếp hành.', style: TextStyle(color: Colors.grey), textAlign: TextAlign.center),
+                          child: const Text('No sessions scheduled for today.', style: TextStyle(color: Colors.grey), textAlign: TextAlign.center),
                         )
                       else
                         ListView.separated(
@@ -154,7 +154,7 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
             children: [
               Text('$_totalCount', style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: -2.0)),
               const SizedBox(width: 8),
-              const Text('lớp học hôm nay', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+              const Text('classes today', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
             ],
           ),
         ],
@@ -243,10 +243,10 @@ class _SlotClassesBottomSheetState extends State<_SlotClassesBottomSheet> {
           });
         }
       } else {
-        if (mounted) setState(() { _errorMessage = 'Không tải được danh sách lớp.'; _isLoading = false; });
+        if (mounted) setState(() { _errorMessage = 'Failed to load class list.'; _isLoading = false; });
       }
     } catch (e) {
-      if (mounted) setState(() { _errorMessage = 'Lỗi kết nối máy chủ.'; _isLoading = false; });
+      if (mounted) setState(() { _errorMessage = 'Server connection error.'; _isLoading = false; });
     }
   }
 

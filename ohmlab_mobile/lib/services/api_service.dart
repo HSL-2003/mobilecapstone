@@ -41,9 +41,9 @@ class ApiConfig {
   static const Color textColor = Colors.white;
   
   // Messages
-  static const String defaultErrorMessage = 'Đã xảy ra lỗi không xác định.';
-  static const String successPrefix = 'Thành công';
-  static const String errorPrefix = 'Lỗi';
+  static const String defaultErrorMessage = 'An unknown error occurred.';
+  static const String successPrefix = 'Success';
+  static const String errorPrefix = 'Error';
 }
 
 /// Enum for notification behavior

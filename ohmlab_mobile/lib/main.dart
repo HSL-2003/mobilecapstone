@@ -4,6 +4,7 @@ import 'package:ohm_lab_mobile/screens/main_screen.dart';
 import 'screens/login.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const OhmLabApp());
 }
 

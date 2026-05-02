@@ -134,7 +134,7 @@ class _GlobalEquipmentScannerState extends State<_GlobalEquipmentScanner> {
       }
     } catch (e) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lỗi kết nối kiểm tra mã QR'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('QR code check connection error'), backgroundColor: Colors.red));
     }
   }
 
@@ -163,7 +163,7 @@ class _GlobalEquipmentScannerState extends State<_GlobalEquipmentScanner> {
                     child: TextFormField(
                       controller: _qrController,
                       decoration: InputDecoration(
-                        hintText: 'Mã QR (VD: OSC-01)',
+                        hintText: 'QR Code (e.g., OSC-01)',
                         filled: true,
                         fillColor: Colors.grey[50],
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
@@ -190,7 +190,7 @@ class _GlobalEquipmentScannerState extends State<_GlobalEquipmentScanner> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                       ),
-                      child: const Text('Kiểm tra', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                      child: const Text('Check', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
                     ),
                   ),
                 ],
@@ -204,7 +204,7 @@ class _GlobalEquipmentScannerState extends State<_GlobalEquipmentScanner> {
         if (_isLoadingEquip)
           const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(color: Color(0xFFF26F21))))
         else if (_equipments.isEmpty)
-           const Center(child: Padding(padding: EdgeInsets.all(20), child: Text('Không có dữ liệu thiết bị cấp phát.', style: TextStyle(color: Colors.grey))))
+           const Center(child: Padding(padding: EdgeInsets.all(20), child: Text('No issued equipment data.', style: TextStyle(color: Colors.grey))))
         else
            ..._equipments.map((equip) {
               final name = equip['equipmentName'] ?? equip['name'] ?? equip['equipmentCode'] ?? 'Unknown Equipment';
@@ -335,13 +335,13 @@ class _BorrowEquipmentFormState extends State<_BorrowEquipmentForm> {
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: ${res.message ?? "Không thể mượn thiết bị."}'), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${res.message ?? "Không thể mượn thiết bị."}'), backgroundColor: Colors.red));
         }
       }
     } catch (e) {
       setState(() => _isSaving = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lỗi kết nối máy chủ.'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Server connection error.'), backgroundColor: Colors.red));
       }
     }
   }

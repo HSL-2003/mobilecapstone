@@ -63,7 +63,7 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
         } else {
           if (mounted) {
             setState(() {
-              _errorMessage = 'Không tìm thấy thông tin giảng viên.';
+              _errorMessage = 'Information not found giảng viên.';
               _isLoading = false;
             });
           }
@@ -79,7 +79,7 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Lỗi kết nối máy chủ.';
+          _errorMessage = 'Server connection error.';
           _isLoading = false;
         });
       }
@@ -94,7 +94,7 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thu hồi thiết bị thành công!'), backgroundColor: Colors.green));
         _fetchHistory();
       } else {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: ${res.message}'), backgroundColor: Colors.red));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${res.message}'), backgroundColor: Colors.red));
         setState(() => _isLoading = false);
       }
     } catch (e) {
@@ -114,7 +114,7 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: AppBar(
-              title: const Text('Lịch sử thiết bị', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: -0.5, fontSize: 24, color: Colors.white)),
+              title: const Text('Equipment History', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: -0.5, fontSize: 24, color: Colors.white)),
               backgroundColor: const Color(0xFFF26F21).withOpacity(0.95),
               elevation: 0,
               iconTheme: const IconThemeData(color: Colors.white),
@@ -161,8 +161,8 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
                   final String eqCode = hist['equipmentCode']?.toString() ?? '-';
 
                   final String rawStatus = hist['teamEquipmentStatus']?.toString() ?? 'Unknown';
-                  final String status = rawStatus == 'AreBorrowing' ? 'Đang sử dụng' : (rawStatus == 'GiveBack' ? 'Đã trả' : rawStatus);
-                  final Color statusColor = status == 'Đã trả' ? Colors.green : Colors.orange;
+                  final String status = rawStatus == 'AreBorrowing' ? 'In Use' : (rawStatus == 'GiveBack' ? 'Returned' : rawStatus);
+                  final Color statusColor = status == 'Returned' ? Colors.green : Colors.orange;
 
                   final int? teamEquipmentId = int.tryParse(hist['teamEquipmentId']?.toString() ?? '');
 
@@ -210,9 +210,9 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
                           const SizedBox(height: 16),
                           const Divider(height: 1, color: Color(0xFFEEEEEE)),
                           const SizedBox(height: 16),
-                          _buildInfoRow(Icons.group_outlined, 'Lớp/Nhóm', '$className - $teamName'),
+                          _buildInfoRow(Icons.group_outlined, 'Class/Team', '$className - $teamName'),
                           const SizedBox(height: 12),
-                          _buildInfoRow(Icons.developer_board, 'Thiết bị', '$equipmentName ($eqCode)'),
+                          _buildInfoRow(Icons.developer_board, 'Equipment', '$equipmentName ($eqCode)'),
                           const SizedBox(height: 20),
                           Container(
                             padding: const EdgeInsets.all(16),
@@ -220,9 +220,9 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                _buildTimeBadge(Icons.call_made, 'Mượn: $borrowTime', Colors.blue),
+                                _buildTimeBadge(Icons.call_made, 'Borrow: $borrowTime', Colors.blue),
                                 if (returnTime != null && returnTime.isNotEmpty && returnTime != 'null')
-                                  _buildTimeBadge(Icons.call_received, 'Trả: $returnTime', Colors.green)
+                                  _buildTimeBadge(Icons.call_received, 'Return: $returnTime', Colors.green)
                                 else if (teamEquipmentId != null)
                                   OutlinedButton.icon(
                                     onPressed: () => _giveBack(teamEquipmentId),
@@ -237,7 +237,7 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
                                     ),
                                   )
                                 else
-                                  _buildTimeBadge(Icons.timer, 'Chưa trả', Colors.orange),
+                                  _buildTimeBadge(Icons.timer, 'Not Returned', Colors.orange),
                               ],
                             ),
                           ),
@@ -349,7 +349,7 @@ class _EquipmentDetailModalState extends State<_EquipmentDetailModal> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Trạng thái: ${_data!['teamEquipmentStatus'] ?? "N/A"}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+                    Text('Status: ${_data!['teamEquipmentStatus'] ?? "N/A"}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
                     Text('ID Lớp: ${_data!['classId']}', style: const TextStyle(color: Colors.grey)),
                   ],
                 ),
@@ -364,7 +364,7 @@ class _EquipmentDetailModalState extends State<_EquipmentDetailModal> {
                 _buildRow('Nhóm:', _data!['teamName']),
                 const Divider(),
                 _buildRow('Giờ mượn:', _data!['teamEquipmentDateBorrow']?.toString() ?? 'N/A'),
-                _buildRow('Giờ trả:', _data!['teamEquipmentDateGiveBack']?.toString() ?? 'Chưa trả'),
+                _buildRow('Giờ trả:', _data!['teamEquipmentDateGiveBack']?.toString() ?? 'Not Returned'),
                 _buildRow('Mô tả:', _data!['teamEquipmentDescription']),
               ],
             const SizedBox(height: 24),
@@ -378,7 +378,7 @@ class _EquipmentDetailModalState extends State<_EquipmentDetailModal> {
                   foregroundColor: Colors.black87,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
-                child: const Text('Đóng', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text('Close', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
           ],

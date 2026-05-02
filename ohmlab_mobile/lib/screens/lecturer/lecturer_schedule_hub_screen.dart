@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../common/daily_schedule_screen.dart';
+import '../common/my_classes_schedule_screen.dart';
 import 'lecturer_propose_schedule_screen.dart';
 
 class LecturerScheduleHubScreen extends StatelessWidget {
@@ -39,7 +39,7 @@ class LecturerScheduleHubScreen extends StatelessWidget {
                 labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                 tabs: const [
-                  Tab(text: 'Daily Schedule'),
+                  Tab(text: 'My Classes'),
                   Tab(text: 'Registrations'),
                 ],
               ),
@@ -48,7 +48,7 @@ class LecturerScheduleHubScreen extends StatelessWidget {
         ),
         body: TabBarView(
           children: [
-            const DailyScheduleScreen(hideAppBar: true), 
+            const MyClassesScheduleScreen(role: 'lecturer', hideAppBar: true), 
             LecturerProposeScheduleScreen(lecturerId: lecturerId, hideAppBar: true),
           ],
         ),

@@ -30,7 +30,7 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
       final int? classId = int.tryParse(widget.classData['classId']?.toString() ?? '');
       if (classId == null) {
         setState(() {
-          _errorMessage = "Không tìm thấy Class ID.";
+          _errorMessage = "Class ID not found.";
           _isLoading = false;
         });
         return;
@@ -55,7 +55,7 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
         if (mounted) {
           setState(() {
             _isLoading = false;
-            _errorMessage = res.message ?? "Lỗi tải danh sách nhóm.";
+            _errorMessage = res.message ?? "Failed to load team list.";
           });
         }
       }
@@ -63,14 +63,14 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = "Lỗi kết nối máy chủ.";
+          _errorMessage = "Server connection error.";
         });
       }
     }
   }
 
   Widget _buildTeamCard(BuildContext context, Map<String, dynamic> team) {
-    final String teamName = team['teamName'] ?? team['name'] ?? 'Nhóm chưa đặt tên';
+    final String teamName = team['teamName'] ?? team['name'] ?? 'Unnamed Team';
     final String details = "Team ID: ${team['id'] ?? team['teamId'] ?? '-'}";
     final rawId = team['id'] ?? team['teamId'];
 
@@ -143,7 +143,7 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
 
     if (users.isEmpty) {
       return const Center(
-        child: Text('Không có sinh viên nào trong danh sách lớp.', style: TextStyle(color: Colors.grey)),
+        child: Text('No students found in the class list.', style: TextStyle(color: Colors.grey)),
       );
     }
 
@@ -195,7 +195,7 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
                     _showTeamSelector(userId, name);
                   }
                 },
-                tooltip: 'Thêm vào nhóm',
+                tooltip: 'Add to team',
               ),
             ],
           ),
@@ -206,7 +206,7 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
 
   Future<void> _showTeamSelector(String userId, String userName) async {
     if (_teams.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lớp hiện chưa có nhóm nào.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Class currently has no teams.')));
       return;
     }
 
@@ -221,9 +221,9 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Thêm $userName vào nhóm', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1E1E1E))),
+            Text('Add \$userName to team', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1E1E1E))),
             const SizedBox(height: 16),
-            const Text('Chọn nhóm để thêm sinh viên này vào:', style: TextStyle(color: Colors.grey, fontSize: 14)),
+            const Text('Select a team to add this student to:', style: TextStyle(color: Colors.grey, fontSize: 14)),
             const SizedBox(height: 24),
             ConstrainedBox(
               constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
@@ -253,7 +253,7 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
               height: 50,
               child: TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Hủy', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -280,16 +280,16 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
 
       if (res.status == 200 || res.status == 201) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã thêm sinh viên vào nhóm thành công!'), backgroundColor: Colors.green));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Student successfully added to team!'), backgroundColor: Colors.green));
           _fetchTeams(); // Refresh to update member counts if visible
         }
       } else {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: ${res.message}'), backgroundColor: Colors.red));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${res.message}'), backgroundColor: Colors.red));
       }
     } catch (e) {
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lỗi kết nối máy chủ.'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Server connection error.'), backgroundColor: Colors.red));
       }
     }
   }
@@ -313,7 +313,7 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
                   _fetchTeams();
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF26F21)),
-                child: const Text('Thử lại', style: TextStyle(color: Colors.white)),
+                child: const Text('Retry', style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
@@ -322,7 +322,7 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
     }
     
     if (_teams.isEmpty) {
-      return const Center(child: Text('Không có nhóm nào trong lớp này.', style: TextStyle(color: Colors.grey)));
+      return const Center(child: Text('No teams found in this class.', style: TextStyle(color: Colors.grey)));
     }
     
     return ListView.builder(
@@ -339,7 +339,7 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final String className = widget.classData['className'] ?? 'Chi tiết Lớp';
+    final String className = widget.classData['className'] ?? 'Class Details';
 
     return DefaultTabController(
       length: 2,
@@ -372,8 +372,8 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
                 labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                 tabs: const [
-                  Tab(text: 'Sinh viên (Class Users)'),
-                  Tab(text: 'Danh sách Team'),
+                  Tab(text: 'Students (Class Users)'),
+                  Tab(text: 'Team List'),
                 ],
               ),
             ),

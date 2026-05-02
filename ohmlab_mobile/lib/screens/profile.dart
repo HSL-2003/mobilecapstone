@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:ohm_lab_mobile/services/user_services.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -37,17 +38,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           });
         }
       } else {
-        if (mounted) setState(() { _errorMessage = 'Không thể tải thông tin. (Code: ${response.status})'; _isLoading = false; });
+        if (mounted) setState(() { _errorMessage = 'Failed to load info. (Code: ${response.status})'; _isLoading = false; });
       }
     } catch (e) {
       print('Profile fetch error: $e');
       if (mounted) setState(() { 
         String errMsg = e.toString();
         if (errMsg.contains('DioException [bad response]')) {
-             if (errMsg.contains('401')) errMsg = 'Token hết hạn hoặc không hợp lệ (401)';
-             else errMsg = 'Lỗi Server Backend';
+             if (errMsg.contains('401')) errMsg = 'Token expired or invalid (401)';
+             else errMsg = 'Backend Server Error';
         }
-        _errorMessage = 'Phiên rỗng, vui lòng đăng xuất ra rồi Đăng Nhập Lại. ($errMsg)'; 
+        _errorMessage = 'Empty session, please logout and Login Again. ($errMsg)'; 
         _isLoading = false; 
       });
     }
@@ -55,6 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final String role = (_userData['userRoleName'] ?? _userData['role'] ?? 'Unknown Role').toString();
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -92,11 +94,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           side: const BorderSide(color: Colors.redAccent),
                           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                         ),
-                        onPressed: () {
-                          // TODO: Có thể gọi UserService.logout() để xoá CSDL nội bộ
+                        onPressed: () async {
+                          try {
+                            await GoogleSignIn().signOut();
+                          } catch (e) {
+                            // Ignore error
+                          }
                           Navigator.pushReplacementNamed(context, '/login');
                         },
-                        child: const Text('ĐĂNG XUẤT LẠI', style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: const Text('LOGOUT AGAIN', style: TextStyle(fontWeight: FontWeight.bold)),
                       )
                     ],
                   ),
@@ -132,7 +138,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            _userData['userFullName'] ?? _userData['name'] ?? 'Chưa cập nhật tên',
+                            _userData['userFullName'] ?? _userData['name'] ?? 'Name not updated',
                             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -0.5, color: Colors.white),
                           ),
                           const SizedBox(height: 4),
@@ -140,7 +146,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                             decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
                             child: Text(
-                              (_userData['userRoleName'] ?? _userData['role'] ?? 'Unknown Role').toString().toUpperCase(),
+                              role.toUpperCase(),
                               style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.w800, letterSpacing: 1.5),
                             ),
                           ),
@@ -166,9 +172,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             padding: const EdgeInsets.all(8),
                             child: Column(
                               children: [
-                                _buildInfoRow('Email', _userData['userEmail'] ?? _userData['email'] ?? 'Chưa cập nhật', Icons.email_outlined),
-                                _buildInfoRow('Roll Number', _userData['userRollNumber'] ?? _userData['studentCode'] ?? 'Chưa thiết lập', Icons.badge_outlined),
-                                _buildInfoRow('Student Code', _userData['userNumberCode'] ?? 'Chưa thiết lập', Icons.numbers),
+                                _buildInfoRow('Email', _userData['userEmail'] ?? _userData['email'] ?? 'Not updated', Icons.email_outlined),
+                                _buildInfoRow('Roll Number', _userData['userRollNumber'] ?? _userData['studentCode'] ?? 'Not set', Icons.badge_outlined),
+                                _buildInfoRow('Number Code', _userData['userNumberCode'] ?? 'Not set', Icons.numbers),
                                 _buildInfoRow('Status', _userData['status'] ?? 'Active', Icons.verified_user_outlined, isLast: true),
                               ],
                             ),
@@ -186,7 +192,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                               ),
-                              onPressed: () {
+                              onPressed: () async {
+                                try {
+                                  await GoogleSignIn().signOut();
+                                } catch (e) {
+                                  // Ignore error
+                                }
                                 Navigator.pushReplacementNamed(context, '/login');
                               },
                               child: const Row(
