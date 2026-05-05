@@ -18,7 +18,7 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
   final ImagePicker _picker = ImagePicker();
 
   // Cloudinary config (dùng chung với project backend)
-  static const String _cloudName = 'dmm03xi29';
+  static const String _cloudName = 'drsvwco0f';
   static const String _uploadPreset = 'unsigned_checkout'; // Tạo Unsigned preset trên Cloudinary
 
   bool _isLoadingSchedules = true;
@@ -50,7 +50,7 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
             // Lọc lịch đang InProgress (đã check-in, đang sử dụng phòng)
             setState(() {
               _schedules = all.where((s) {
-                final status = (s['registrationScheduleStatus'] ?? s['status'] ?? '').toString().toLowerCase();
+                final status = (s['registraionScheduleStatus'] ?? s['registrationScheduleStatus'] ?? s['status'] ?? '').toString().toLowerCase();
                 return status == 'inprogress' || status == 'in_progress' || status == 'in progress';
               }).toList();
               _isLoadingSchedules = false;
@@ -83,14 +83,18 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
       if (response.statusCode == 200) {
         return response.data['secure_url'] as String?;
       }
+    } on DioException catch (e) {
+      debugPrint('Cloudinary upload DioError: ${e.response?.data}');
+      throw Exception('Cloudinary Error: ${e.response?.data['error']?['message'] ?? e.message}');
     } catch (e) {
       debugPrint('Cloudinary upload error: $e');
+      throw Exception('Lỗi upload ảnh: $e');
     }
     return null;
   }
 
   Future<void> _startCheckOut(Map<String, dynamic> schedule) async {
-    final int? scheduleId = int.tryParse((schedule['registrationScheduleId'] ?? schedule['id'] ?? '').toString());
+    final int? scheduleId = int.tryParse((schedule['registraionScheduleId'] ?? schedule['registrationScheduleId'] ?? schedule['id'] ?? '').toString());
     if (scheduleId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Không tìm thấy ID lịch.'), backgroundColor: Colors.red),
@@ -251,10 +255,10 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
                           itemBuilder: (context, index) {
                             final s = _schedules[index];
                             final String roomName = s['roomName'] ?? s['room']?['roomName'] ?? 'Phòng N/A';
-                            final String date = s['registrationScheduleDate'] ?? s['date'] ?? 'N/A';
+                            final String date = s['registraionScheduleDate'] ?? s['registrationScheduleDate'] ?? s['date'] ?? 'N/A';
                             final String startTime = s['slotStartTime'] ?? s['startTime'] ?? '';
                             final String endTime = s['slotEndTime'] ?? s['endTime'] ?? '';
-                            final String status = s['registrationScheduleStatus'] ?? s['status'] ?? 'N/A';
+                            final String status = s['registraionScheduleStatus'] ?? s['registrationScheduleStatus'] ?? s['status'] ?? 'N/A';
                             final String? existingImgUrl = s['registraionSchedule_Url_Img_Checkout']?.toString();
 
                             return Container(

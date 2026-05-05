@@ -149,8 +149,10 @@ class UserService {
       data: {
         'pageNum': 1,
         'pageSize': 100,
-        'keyWord': keyword.isEmpty ? null : keyword,
+        'keyword': keyword.isEmpty ? null : keyword,
         'status': status.isEmpty ? null : status,
+        'date': null,
+        'slotId': 0,
       },
     );
     return ApiResponse.fromResponse(response);
@@ -273,12 +275,11 @@ class UserService {
     return ApiResponse.fromResponse(response);
   }
 
-  Future<ApiResponse> securityCheckIn(int registrationScheduleId, int roomId) async {
+  Future<ApiResponse> securityCheckIn(int registrationScheduleId) async {
     final response = await _apiService.defaultDio.post(
       '/api/security/checkin',
       data: {
         'registrationScheduleId': registrationScheduleId,
-        'roomId': roomId,
       },
     );
     return ApiResponse.fromResponse(response);

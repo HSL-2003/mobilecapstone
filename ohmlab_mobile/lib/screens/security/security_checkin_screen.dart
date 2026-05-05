@@ -25,15 +25,32 @@ class _SecurityCheckInScreenState extends State<SecurityCheckInScreen> {
   Future<void> _loadSchedules() async {
     setState(() { _isLoading = true; _errorMessage = null; });
     try {
-      // Lấy tất cả lịch có status Approved (chờ bảo vệ check-in)
-      final res = await _userService.getAllRegistrationSchedules(status: 'Approved');
+      // Lấy tất cả lịch (không filter status theo yêu cầu mới)
+      final res = await _userService.getAllRegistrationSchedules();
       if (res.status == 200 || res.status == 201) {
         final payload = res.data;
         List<dynamic> all = [];
         if (payload is List) {
           all = payload;
-        } else if (payload is Map && payload.containsKey('data')) {
-          all = payload['data'] is List ? payload['data'] : [];
+        } else if (payload is Map) {
+          if (payload.containsKey('data') && payload['data'] is List) {
+            all = payload['data'];
+          } else if (payload.containsKey('items') && payload['items'] is List) {
+            all = payload['items'];
+          } else if (payload.containsKey('list') && payload['list'] is List) {
+            all = payload['list'];
+          } else if (payload.containsKey('pageData') && payload['pageData'] is List) {
+            all = payload['pageData'];
+          } else if (payload.containsKey('data') && payload['data'] is Map) {
+            final innerData = payload['data'];
+            if (innerData.containsKey('pageData') && innerData['pageData'] is List) {
+              all = innerData['pageData'];
+            } else if (innerData.containsKey('items') && innerData['items'] is List) {
+              all = innerData['items'];
+            } else if (innerData.containsKey('data') && innerData['data'] is List) {
+              all = innerData['data'];
+            }
+          }
         }
         setState(() {
           _schedules = all;
@@ -61,7 +78,7 @@ class _SecurityCheckInScreenState extends State<SecurityCheckInScreen> {
   }
 
   Future<void> _doCheckIn(Map<String, dynamic> schedule) async {
-    final int? scheduleId = int.tryParse((schedule['registrationScheduleId'] ?? schedule['id'] ?? '').toString());
+    final int? scheduleId = int.tryParse((schedule['registraionScheduleId'] ?? schedule['registrationScheduleId'] ?? schedule['id'] ?? '').toString());
     final int? roomId = int.tryParse((schedule['roomId'] ?? schedule['room']?['id'] ?? '').toString());
 
     if (scheduleId == null || roomId == null) {
@@ -114,7 +131,7 @@ class _SecurityCheckInScreenState extends State<SecurityCheckInScreen> {
     );
 
     try {
-      final res = await _userService.securityCheckIn(scheduleId, roomId);
+      final res = await _userService.securityCheckIn(scheduleId);
       Navigator.pop(context); // dismiss loading
 
       if (res.status == 200 || res.status == 201) {
@@ -207,10 +224,10 @@ class _SecurityCheckInScreenState extends State<SecurityCheckInScreen> {
                         final s = _schedules[index];
                         final String roomName = s['roomName'] ?? s['room']?['roomName'] ?? 'Phòng N/A';
                         final String teacher = s['lecturerName'] ?? s['teacherName'] ?? s['teacherFullName'] ?? 'N/A';
-                        final String date = s['registrationScheduleDate'] ?? s['date'] ?? 'N/A';
+                        final String date = s['registraionScheduleDate'] ?? s['registrationScheduleDate'] ?? s['date'] ?? 'N/A';
                         final String startTime = s['slotStartTime'] ?? s['startTime'] ?? '';
                         final String endTime = s['slotEndTime'] ?? s['endTime'] ?? '';
-                        final String status = s['registrationScheduleStatus'] ?? s['status'] ?? 'N/A';
+                        final String status = s['registraionScheduleStatus'] ?? s['registrationScheduleStatus'] ?? s['status'] ?? 'N/A';
 
                         return Container(
                           margin: const EdgeInsets.only(bottom: 16),
