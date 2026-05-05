@@ -290,7 +290,13 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
                                                 children: [
                                                   Icon(Icons.calendar_today, size: 13, color: Colors.grey[500]),
                                                   const SizedBox(width: 4),
-                                                  Text('$date  $startTime-$endTime', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                                                  Flexible(
+                                                    child: Text(
+                                                      '${date.split('T')[0]}  $startTime-$endTime', 
+                                                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
                                                 ],
                                               ),
                                             ],

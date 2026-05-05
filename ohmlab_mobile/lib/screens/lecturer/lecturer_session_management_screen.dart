@@ -13,7 +13,7 @@ class LecturerSessionManagementScreen extends StatelessWidget {
     final title = teamData?['teamName'] ?? teamData?['name'] ?? 'IoT Class SE1601 - Lab 3';
 
     return DefaultTabController(
-      length: 3,
+      length: 2,
       child: Scaffold(
         backgroundColor: const Color(0xFFF8F9FA),
         appBar: AppBar(
@@ -43,7 +43,6 @@ class LecturerSessionManagementScreen extends StatelessWidget {
                 labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                 tabs: const [
-                  Tab(text: 'Equipment'),
                   Tab(text: 'Groups'),
                   Tab(text: 'Grading'),
                 ],
@@ -53,7 +52,6 @@ class LecturerSessionManagementScreen extends StatelessWidget {
         ),
         body: TabBarView(
           children: [
-            _EquipmentTab(teamData: teamData),
             _GroupsTab(teamData: teamData),
             _GradingTab(teamData: teamData),
           ],
@@ -63,202 +61,6 @@ class LecturerSessionManagementScreen extends StatelessWidget {
   }
 }
 
-class _EquipmentTab extends StatefulWidget {
-  final Map<String, dynamic>? teamData;
-  const _EquipmentTab({this.teamData});
-
-  @override
-  State<_EquipmentTab> createState() => _EquipmentTabState();
-}
-
-class _EquipmentTabState extends State<_EquipmentTab> {
-  final TextEditingController _qrController = TextEditingController();
-  final ReportService _reportService = ReportService();
-  final UserService _userService = UserService();
-  
-  bool _isLoadingEquip = true;
-  List<dynamic> _equipments = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchEquipments();
-  }
-
-  Future<void> _fetchEquipments() async {
-    try {
-      final res = await _userService.searchEquipment(
-        pageNum: 1,
-        pageSize: 100,
-        keyword: "",
-        status: "",
-      );
-      if (res.status == 200 || res.status == 201) {
-        if (mounted) {
-          setState(() {
-            if (res.data is Map && res.data.containsKey('data')) {
-              final payloadData = res.data['data'];
-              if (payloadData is Map && payloadData.containsKey('pageData')) {
-                _equipments = payloadData['pageData'] is List ? payloadData['pageData'] : [];
-              } else if (payloadData is List) {
-                _equipments = payloadData;
-              }
-            }
-            _isLoadingEquip = false;
-          });
-        }
-      } else {
-        if (mounted) setState(() { _isLoadingEquip = false; });
-      }
-    } catch (e) {
-      if (mounted) setState(() { _isLoadingEquip = false; });
-    }
-  }
-
-  Future<void> _verifyQR() async {
-    final qr = _qrController.text.trim();
-    if (qr.isEmpty) return;
-    
-    // Đóng bàn phím
-    FocusScope.of(context).unfocus();
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator(color: Color(0xFFF26F21))),
-    );
-
-    try {
-      final id = widget.teamData?['id']?.toString() ?? widget.teamData?['teamId']?.toString() ?? "0";
-      final res = await _reportService.verifyEquipmentQR(id, qr);
-      Navigator.pop(context);
-      
-      if (res.status == 200 || res.status == 201) {
-         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Valid equipment confirmed!'), backgroundColor: Colors.green));
-         _qrController.clear();
-      } else {
-         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res.message ?? 'Invalid equipment code'), backgroundColor: Colors.red));
-      }
-    } catch (e) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('QR code check connection error'), backgroundColor: Colors.red));
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        const Text('Scan Equipment Code (QR Check)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white, 
-            borderRadius: BorderRadius.circular(24), 
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 4))],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Enter or scan equipment code to confirm kit for the Lab session.', style: TextStyle(color: Colors.black54, fontSize: 13, height: 1.5)),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _qrController,
-                      decoration: InputDecoration(
-                        hintText: 'QR Code (e.g., OSC-01)',
-                        filled: true,
-                        fillColor: Colors.grey[50], // Soft fill
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE))),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFF26F21))),
-                        prefixIcon: const Icon(Icons.qr_code_scanner, color: Color(0xFFF26F21)),
-                      ),
-                      onFieldSubmitted: (_) => _verifyQR(),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    height: 56,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [Color(0xFFF26F21), Color(0xFFFFA726)]),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [BoxShadow(color: const Color(0xFFF26F21).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
-                    ),
-                    child: ElevatedButton(
-                      onPressed: _verifyQR,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                      ),
-                      child: const Text('Check', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 32),
-        const Text('Pre-Session Checklist', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
-        const SizedBox(height: 16),
-        if (_isLoadingEquip)
-          const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(color: Color(0xFFF26F21))))
-        else if (_equipments.isEmpty)
-           const Center(child: Padding(padding: EdgeInsets.all(20), child: Text('No issued equipment data.', style: TextStyle(color: Colors.grey))))
-        else
-           ..._equipments.map((equip) {
-              final name = equip['equipmentName'] ?? equip['name'] ?? equip['equipmentCode'] ?? 'Unknown Equipment';
-              final qty = equip['quantity'] ?? 1;
-              final desc = equip['description'] ?? '';
-              final title = desc.isNotEmpty ? '$name ($desc)' : name;
-              // Nếu bạn muốn hiển thị Status
-              // final status = equip['status'];
-              
-              return _buildCheckItem('$title x$qty', true); // Tick ngẫu nhiên hoặc lưu trạng thái thực tế
-           }).toList(),
-        
-        const SizedBox(height: 32),
-        const Text('Post-Session Action', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
-        const SizedBox(height: 8),
-        const Text('Verify all tools are collected and note any damages.', style: TextStyle(color: Colors.black54, fontSize: 13)),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: OutlinedButton.icon(
-            onPressed: () {
-               Navigator.push(context, MaterialPageRoute(builder: (_) => const CommonReportIncidentScreen()));
-            },
-            icon: const Icon(Icons.report_problem, color: Colors.redAccent),
-            label: const Text('Report Damaged Equipment', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.redAccent,
-              side: const BorderSide(color: Colors.redAccent, width: 1.5),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            ),
-          ),
-        )
-      ],
-    );
-  }
-  Widget _buildCheckItem(String title, bool isChecked) {
-    return CheckboxListTile(
-      value: isChecked,
-      onChanged: (v) {},
-      title: Text(title, style: TextStyle(decoration: isChecked ? TextDecoration.lineThrough : null)),
-      controlAffinity: ListTileControlAffinity.leading,
-      contentPadding: EdgeInsets.zero,
-      activeColor: const Color(0xFFF26F21),
-    );
-  }
-}
 
 class _GroupsTab extends StatefulWidget {
   final Map<String, dynamic>? teamData;
