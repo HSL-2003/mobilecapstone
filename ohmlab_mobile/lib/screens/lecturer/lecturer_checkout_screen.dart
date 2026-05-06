@@ -7,7 +7,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:ohm_lab_mobile/services/user_services.dart';
 
 class LecturerCheckOutScreen extends StatefulWidget {
-  const LecturerCheckOutScreen({super.key});
+  final bool isEmbedded;
+  const LecturerCheckOutScreen({super.key, this.isEmbedded = false});
 
   @override
   State<LecturerCheckOutScreen> createState() => _LecturerCheckOutScreenState();
@@ -208,49 +209,33 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      backgroundColor: const Color(0xFFF8F9FA),
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
-        child: ClipRRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: AppBar(
-              title: const Text('Check-out phòng Lab',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white)),
-              backgroundColor: const Color(0xFFF26F21).withOpacity(0.95),
-              elevation: 0,
-              iconTheme: const IconThemeData(color: Colors.white),
-              systemOverlayStyle: const SystemUiOverlayStyle(statusBarBrightness: Brightness.dark),
-              actions: [
-                IconButton(icon: const Icon(Icons.refresh, color: Colors.white), onPressed: _loadSchedules),
-              ],
-            ),
-          ),
-        ),
-      ),
-      body: Stack(
-        children: [
-          _isLoadingSchedules
-              ? const Center(child: CircularProgressIndicator(color: Color(0xFFF26F21)))
-              : _errorMessage != null
-                  ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(_errorMessage!, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center)))
-                  : _schedules.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.check_circle_outline, size: 80, color: Colors.grey[300]),
-                              const SizedBox(height: 16),
-                              const Text('Không có lịch nào đang InProgress.', style: TextStyle(color: Colors.grey, fontSize: 16)),
-                              const SizedBox(height: 8),
-                              const Text('(Bảo vệ cần check-in trước)', style: TextStyle(color: Colors.grey, fontSize: 13)),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.only(top: 90, left: 20, right: 20, bottom: 24),
+    Widget content = Stack(
+      children: [
+        _isLoadingSchedules
+            ? (widget.isEmbedded 
+                ? const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator(color: Color(0xFFF26F21))))
+                : const Center(child: CircularProgressIndicator(color: Color(0xFFF26F21))))
+            : _errorMessage != null
+                ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(_errorMessage!, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center)))
+                : _schedules.isEmpty
+                    ? (widget.isEmbedded 
+                        ? const SizedBox.shrink()
+                        : Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.check_circle_outline, size: 80, color: Colors.grey[300]),
+                                const SizedBox(height: 16),
+                                const Text('Không có lịch nào đang InProgress.', style: TextStyle(color: Colors.grey, fontSize: 16)),
+                                const SizedBox(height: 8),
+                                const Text('(Bảo vệ cần check-in trước)', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                              ],
+                            ),
+                          ))
+                    : ListView.builder(
+                        shrinkWrap: widget.isEmbedded,
+                        physics: widget.isEmbedded ? const NeverScrollableScrollPhysics() : const AlwaysScrollableScrollPhysics(),
+                        padding: widget.isEmbedded ? const EdgeInsets.only(top: 0, bottom: 10) : const EdgeInsets.only(top: 90, left: 20, right: 20, bottom: 24),
                           itemCount: _schedules.length,
                           itemBuilder: (context, index) {
                             final s = _schedules[index];
@@ -277,8 +262,8 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
                                       children: [
                                         Container(
                                           padding: const EdgeInsets.all(10),
-                                          decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                                          child: const Icon(Icons.meeting_room, color: Colors.blue, size: 22),
+                                          decoration: BoxDecoration(color: const Color(0xFFF26F21).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                                          child: const Icon(Icons.meeting_room, color: Color(0xFFF26F21), size: 22),
                                         ),
                                         const SizedBox(width: 12),
                                         Expanded(
@@ -304,8 +289,8 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
                                         ),
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                          decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                                          child: Text(status, style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 11)),
+                                          decoration: BoxDecoration(color: const Color(0xFFF26F21).withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                                          child: Text(status, style: const TextStyle(color: Color(0xFFF26F21), fontWeight: FontWeight.bold, fontSize: 11)),
                                         ),
                                       ],
                                     ),
@@ -327,11 +312,11 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
                                             ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                                             : const Icon(Icons.camera_alt, size: 18),
                                         label: Text(
-                                          _isUploading ? 'Uploading image...' : 'Check-out (Chụp ảnh trả phòng)',
+                                          _isUploading ? 'Uploading image...' : 'Check_Out',
                                           style: const TextStyle(fontWeight: FontWeight.bold),
                                         ),
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.blue[700],
+                                          backgroundColor: const Color(0xFFF26F21),
                                           foregroundColor: Colors.white,
                                           padding: const EdgeInsets.symmetric(vertical: 14),
                                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -361,7 +346,35 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
               ),
             ),
         ],
+      );
+
+    if (widget.isEmbedded) {
+      return content;
+    }
+
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      backgroundColor: const Color(0xFFF8F9FA),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(60),
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: AppBar(
+              title: const Text('Check-out phòng Lab',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white)),
+              backgroundColor: const Color(0xFFF26F21).withOpacity(0.95),
+              elevation: 0,
+              iconTheme: const IconThemeData(color: Colors.white),
+              systemOverlayStyle: const SystemUiOverlayStyle(statusBarBrightness: Brightness.dark),
+              actions: [
+                IconButton(icon: const Icon(Icons.refresh, color: Colors.white), onPressed: _loadSchedules),
+              ],
+            ),
+          ),
+        ),
       ),
+      body: content,
     );
   }
 }

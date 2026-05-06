@@ -112,6 +112,7 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
             const SizedBox(height: 24),
             
             // Content Body
+            const LecturerCheckOutScreen(isEmbedded: true),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Column(
@@ -172,8 +173,6 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
         _buildActionCard(context, 'Equipment', Icons.qr_code_scanner, const LecturerEquipmentHubScreen()),
         const SizedBox(height: 16),
         _buildActionCard(context, 'Kit Management', Icons.inventory_2, const LecturerKitHubScreen()),
-        const SizedBox(height: 16),
-        _buildActionCard(context, 'Check-out', Icons.logout, const LecturerCheckOutScreen()),
         const SizedBox(height: 16),
         _buildActionCard(context, 'Report', Icons.report_problem, const LecturerReportHubScreen()),
       ],

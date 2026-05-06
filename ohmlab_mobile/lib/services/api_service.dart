@@ -137,13 +137,13 @@ class ApiService {
     try {
       final data = response.data;
       if (data is Map<String, dynamic> && data['message'] != null) {
-        Fluttertoast.showToast(
-          msg: '${ApiConfig.successPrefix}\n${data['message']}',
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.TOP,
-          backgroundColor: ApiConfig.successColor,
-          textColor: ApiConfig.textColor,
-        );
+        // Fluttertoast.showToast(
+        //   msg: '${ApiConfig.successPrefix}\n${data['message']}',
+        //   toastLength: Toast.LENGTH_SHORT,
+        //   gravity: ToastGravity.TOP,
+        //   backgroundColor: ApiConfig.successColor,
+        //   textColor: ApiConfig.textColor,
+        // );
       }
     } catch (e) {
       print('Error showing success toast: $e');
@@ -162,13 +162,13 @@ class ApiService {
         }
       }
       
-      Fluttertoast.showToast(
-        msg: '${ApiConfig.errorPrefix}\n$errorMessage',
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.TOP,
-        backgroundColor: ApiConfig.errorColor,
-        textColor: ApiConfig.textColor,
-      );
+      // Fluttertoast.showToast(
+      //   msg: '${ApiConfig.errorPrefix}\n$errorMessage',
+      //   toastLength: Toast.LENGTH_SHORT,
+      //   gravity: ToastGravity.TOP,
+      //   backgroundColor: ApiConfig.errorColor,
+      //   textColor: ApiConfig.textColor,
+      // );
     } catch (ex) {
       print('Error showing error toast: $ex');
     }

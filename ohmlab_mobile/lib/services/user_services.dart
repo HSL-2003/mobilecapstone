@@ -143,6 +143,11 @@ class UserService {
     return ApiResponse.fromResponse(response);
   }
 
+  Future<ApiResponse> getRegistrationSchedulesByStudentId(String studentId) async {
+    final response = await _apiService.defaultDio.get('/api/registrationschedule/student/$studentId');
+    return ApiResponse.fromResponse(response);
+  }
+
   Future<ApiResponse> getAllRegistrationSchedules({String status = '', String keyword = ''}) async {
     final response = await _apiService.defaultDio.post(
       '/api/registrationschedule/search',
