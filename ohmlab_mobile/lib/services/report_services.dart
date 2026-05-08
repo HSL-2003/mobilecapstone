@@ -17,18 +17,20 @@ class ReportService {
   }
 
   Future<ApiResponse> createReport({
-    required String title,
-    required String description,
-    required String slot,
-    required String className,
+    required int registraionScheduleId,
+    required String equipmentId,
+    required String urlImg,
+    required String reportTitle,
+    required String reportDescription,
   }) async {
     final response = await _apiService.defaultDio.post(
       '/api/report',
       data: {
-        "reportTitle": title,
-        "reportDescription": description,
-        "selectedSlot": slot,
-        "selectedClass": className,
+        "registraionScheduleId": registraionScheduleId,
+        "equipmentId": equipmentId,
+        "url_Img": urlImg,
+        "reportTitle": reportTitle,
+        "reportDescription": reportDescription,
       },
     );
     return ApiResponse.fromResponse(response);
@@ -58,6 +60,19 @@ class ReportService {
 
   Future<ApiResponse> getMyReports() async {
     final response = await _apiService.defaultDio.get('/api/report/my-reports');
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> searchEquipments() async {
+    final response = await _apiService.defaultDio.post(
+      '/api/equipment/search',
+      data: {
+        "pageNum": 1,
+        "pageSize": 1000,
+        "keyWord": "",
+        "status": ""
+      },
+    );
     return ApiResponse.fromResponse(response);
   }
 }

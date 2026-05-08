@@ -19,6 +19,7 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   List<dynamic> _teams = [];
+  List<dynamic> _classUsers = [];
   String? _currentStudentId;
   int? _myTeamId;
 
@@ -57,6 +58,8 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
       }
 
       final res = await _userService.getTeamsByClassId(classId);
+      final classRes = await _userService.getClassById(classId);
+
       if (res.status == 200 || res.status == 201) {
         final payload = res.data;
         List<dynamic> allTeams = [];
@@ -94,6 +97,17 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
           setState(() {
             _teams = myTeams;
             _isLoading = false;
+            
+            // Extract class users
+            if (classRes.status == 200 || classRes.status == 201) {
+              final cPayload = classRes.data;
+              if (cPayload is Map && cPayload.containsKey('data')) {
+                final clsData = cPayload['data'];
+                if (clsData is Map && clsData.containsKey('classUsers')) {
+                  _classUsers = clsData['classUsers'] is List ? clsData['classUsers'] : [];
+                }
+              }
+            }
           });
         }
       } else {
@@ -252,8 +266,7 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
   }
 
   Future<void> _showGradeDialog(int teamId, String teamName) async {
-    // We need a labId. For now, try to get it from classData or use a fallback.
-    final int labId = int.tryParse(widget.classData['labId']?.toString() ?? '1') ?? 1;
+    final int? scheduleId = int.tryParse(widget.classData['registraionScheduleId']?.toString() ?? widget.classData['registrationScheduleId']?.toString() ?? '');
 
     showDialog(
       context: context,
@@ -262,14 +275,29 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
     );
 
     try {
-      final res = await _userService.getGrade(labId, teamId);
+      final res = await _userService.getMyGrades();
       Navigator.pop(context);
 
       if (res.status == 200 || res.status == 201) {
         final rawData = res.data is Map && res.data.containsKey('data') ? res.data['data'] : res.data;
-        if (rawData != null && rawData is Map && rawData.isNotEmpty) {
-          final Map<String, dynamic> data = Map<String, dynamic>.from(rawData);
-          _displayGradeInfo(teamName, data);
+        if (rawData != null && rawData is List) {
+          // Find the latest grade for the current schedule by using lastWhere
+          final match = rawData.lastWhere(
+            (g) => g is Map && g['registrationScheduleId'] == scheduleId, 
+            orElse: () => null
+          );
+          
+          if (match != null) {
+            final Map<String, dynamic> data = {
+              'grade': match['gradeDescriptionScore'] ?? match['gradeScore'],
+              'gradeDescription': match['gradeDescriptionDescription'] ?? match['gradeDescription'],
+              'gradeStatus': match['gradeDescriptionStatus'] ?? match['gradeStatus'],
+              'labName': match['labName'] ?? match['registrationScheduleName']
+            };
+            _displayGradeInfo(teamName, data);
+          } else {
+            _showNoGradeInfo(teamName);
+          }
         } else {
           _showNoGradeInfo(teamName);
         }
@@ -291,7 +319,7 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
           children: [
             const Icon(Icons.military_tech, color: Color(0xFFF26F21), size: 48),
             const SizedBox(height: 8),
-            Text('Grade - $teamName', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text('Grade - ${data['labName'] ?? teamName}', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           ],
         ),
         content: Column(
@@ -357,8 +385,8 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
   }
 
   Widget _buildStudentList() {
-    List<dynamic> users = [];
-    if (widget.classData['classUsers'] != null && widget.classData['classUsers'] is List) {
+    List<dynamic> users = _classUsers.isNotEmpty ? _classUsers : [];
+    if (users.isEmpty && widget.classData['classUsers'] != null && widget.classData['classUsers'] is List) {
       users = widget.classData['classUsers'];
     }
 
@@ -373,7 +401,7 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
       itemCount: users.length,
       itemBuilder: (context, index) {
         final user = users[index];
-        final String name = user['userName'] ?? user['fullName'] ?? user['name'] ?? 'Unknown User';
+        final String name = user['userFullName'] ?? user['userName'] ?? user['fullName'] ?? user['name'] ?? 'Unknown User';
         final String code = user['userCode'] ?? user['studentCode'] ?? user['code'] ?? 'N/A';
         
         return Container(

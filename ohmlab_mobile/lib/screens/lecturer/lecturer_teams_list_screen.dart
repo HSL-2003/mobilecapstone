@@ -18,6 +18,8 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   List<dynamic> _teams = [];
+  List<dynamic> _classUsers = [];
+  Map<int, dynamic> _teamGrades = {};
 
   @override
   void initState() {
@@ -36,7 +38,33 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
         return;
       }
 
+      // Fetch Teams
       final res = await _userService.getTeamsByClassId(classId);
+      
+      // Fetch Class Users
+      final classRes = await _userService.getClassById(classId);
+
+      // Fetch Grades for the current schedule
+      final int? scheduleId = int.tryParse(widget.classData['registraionScheduleId']?.toString() ?? '');
+      if (scheduleId != null) {
+        try {
+          final gradeRes = await _userService.getGradesByScheduleId(scheduleId);
+          if (gradeRes.status == 200 || gradeRes.status == 201) {
+             final gPayload = gradeRes.data;
+             if (gPayload is Map && gPayload.containsKey('data') && gPayload['data'] is List) {
+                for (var g in gPayload['data']) {
+                   if (g is Map && g['teamId'] != null) {
+                      final tId = int.tryParse(g['teamId'].toString());
+                      if (tId != null) {
+                         _teamGrades[tId] = g;
+                      }
+                   }
+                }
+             }
+          }
+        } catch (_) {}
+      }
+
       if (res.status == 200 || res.status == 201) {
         if (mounted) {
           setState(() {
@@ -48,6 +76,17 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
               _teams = payload;
             } else {
               _teams = [];
+            }
+
+            // Extract Class Users
+            if (classRes.status == 200 || classRes.status == 201) {
+              final cPayload = classRes.data;
+              if (cPayload is Map && cPayload.containsKey('data')) {
+                final clsData = cPayload['data'];
+                if (clsData is Map && clsData.containsKey('classUsers')) {
+                  _classUsers = clsData['classUsers'] is List ? clsData['classUsers'] : [];
+                }
+              }
             }
           });
         }
@@ -85,6 +124,7 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
                 "teamId": rawId,
                 "teamName": teamName,
                 "className": widget.classData['className'],
+                "registraionScheduleId": widget.classData['registraionScheduleId'],
                 ...team,
               },
             ),
@@ -128,7 +168,46 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
+            if (_teamGrades.containsKey(rawId))
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.star, color: Colors.green, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${_teamGrades[rawId]['gradeScore'] ?? ''}',
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () {
+                       _showUpdateGradeDialog(team, _teamGrades[rawId]);
+                    },
+                    behavior: HitTestBehavior.opaque,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.edit, color: Colors.blue, size: 18),
+                    ),
+                  ),
+                ],
+              )
+            else
+              const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
           ],
         ),
       ),
@@ -136,8 +215,8 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
   }
 
   Widget _buildStudentList() {
-    List<dynamic> users = [];
-    if (widget.classData['classUsers'] != null && widget.classData['classUsers'] is List) {
+    List<dynamic> users = _classUsers.isNotEmpty ? _classUsers : [];
+    if (users.isEmpty && widget.classData['classUsers'] != null && widget.classData['classUsers'] is List) {
       users = widget.classData['classUsers'];
     }
 
@@ -221,7 +300,7 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Add \$userName to team', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1E1E1E))),
+            Text('Add $userName to team', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1E1E1E))),
             const SizedBox(height: 16),
             const Text('Select a team to add this student to:', style: TextStyle(color: Colors.grey, fontSize: 14)),
             const SizedBox(height: 24),
@@ -337,6 +416,208 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
     );
   }
 
+  void _showUpdateGradeDialog(Map<String, dynamic> team, Map<String, dynamic> gradeData) {
+    final TextEditingController gradeCtrl = TextEditingController(text: gradeData['gradeScore']?.toString() ?? '');
+    final TextEditingController descCtrl = TextEditingController(text: gradeData['gradeDescription']?.toString() ?? '');
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Text('Update Grade - ${team['teamName'] ?? 'Team'}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E))),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: gradeCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: 'Grade Score (0-10)',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: descCtrl,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: 'Evaluation Feedback',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSaving ? null : () => Navigator.pop(context),
+                  child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  onPressed: isSaving
+                      ? null
+                      : () async {
+                          final double? score = double.tryParse(gradeCtrl.text.trim());
+                          if (score == null || score < 0 || score > 10) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid grade score!'), backgroundColor: Colors.orange));
+                            return;
+                          }
+
+                          setStateDialog(() {
+                            isSaving = true;
+                          });
+
+                          final num gradeVal = score == score.toInt() ? score.toInt() : score;
+                          final String desc = descCtrl.text.trim().isEmpty ? "None" : descCtrl.text.trim();
+
+                          final payload = {
+                            "gradeId": gradeData['gradeId'],
+                            "teacherId": gradeData['teacherId'],
+                            "registraionScheduleId": gradeData['registraionScheduleId'] ?? widget.classData['registraionScheduleId'],
+                            "teamId": gradeData['teamId'] ?? team['id'],
+                            "gradeScore": gradeVal,
+                            "gradeDescription": desc,
+                            "gradeDate": gradeData['gradeDate'] ?? DateTime.now().toIso8601String(),
+                            "gradeStatus": gradeData['gradeStatus'] ?? "Valid"
+                          };
+
+                          try {
+                            final res = await _userService.updateGrade(payload);
+                            if (res.status == 200 || res.status == 201) {
+                              Navigator.pop(context);
+                              _fetchTeams(); // Reload to reflect changes
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Grade updated successfully!'), backgroundColor: Colors.green));
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res.message ?? 'Failed to update grade.'), backgroundColor: Colors.red));
+                            }
+                          } catch (e) {
+                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error connecting to server.'), backgroundColor: Colors.red));
+                          } finally {
+                            if (mounted) {
+                              setStateDialog(() {
+                                isSaving = false;
+                              });
+                            }
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: isSaving
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Text('Update', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showCreateTeamDialog() {
+    final TextEditingController nameCtrl = TextEditingController();
+    final TextEditingController descCtrl = TextEditingController();
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Text('Create New Team', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E1E1E))),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Team Name',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: descCtrl,
+                    maxLines: 2,
+                    decoration: InputDecoration(
+                      labelText: 'Description',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSaving ? null : () => Navigator.pop(context),
+                  child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  onPressed: isSaving
+                      ? null
+                      : () async {
+                          final String name = nameCtrl.text.trim();
+                          if (name.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Team name cannot be empty!'), backgroundColor: Colors.orange));
+                            return;
+                          }
+
+                          setStateDialog(() {
+                            isSaving = true;
+                          });
+
+                          final int? classId = int.tryParse(widget.classData['classId']?.toString() ?? '');
+                          
+                          final payload = {
+                            "classId": classId ?? 0,
+                            "teamName": name,
+                            "teamDescription": descCtrl.text.trim(),
+                            "teamStatus": "Active"
+                          };
+
+                          try {
+                            final res = await _userService.createTeam(payload);
+                            if (res.status == 200 || res.status == 201) {
+                              Navigator.pop(context);
+                              _fetchTeams(); // Reload teams
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Team created successfully!'), backgroundColor: Colors.green));
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res.message ?? 'Failed to create team.'), backgroundColor: Colors.red));
+                            }
+                          } catch (e) {
+                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+                          } finally {
+                            if (mounted) {
+                              setStateDialog(() {
+                                isSaving = false;
+                              });
+                            }
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF26F21),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: isSaving
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Text('Create', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final String className = widget.classData['className'] ?? 'Class Details';
@@ -384,6 +665,12 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
             _buildStudentList(),
             _buildTeamsTab(),
           ],
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: _showCreateTeamDialog,
+          backgroundColor: const Color(0xFFF26F21),
+          icon: const Icon(Icons.add, color: Colors.white),
+          label: const Text('Create Team', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         ),
       ),
     );

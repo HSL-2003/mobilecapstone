@@ -122,13 +122,12 @@ class _CommonReportHistoryScreenState extends State<CommonReportHistoryScreen> {
               itemBuilder: (context, index) {
                 final report = _reportHistory[index];
                 
-                final String idStr = report['id']?.toString() ?? 'N/A';
-                final String dateStr = report['createdDate']?.toString() ?? report['reportDate']?.toString() ?? 'Unknown Date';
-                final String classStr = report['className']?.toString() ?? 'N/A';
-                final String slotStr = report['slot']?.toString() ?? '';
-                final String categoryStr = report['categoryName']?.toString() ?? report['reportCategory']?.toString() ?? 'Other';
-                final String equipStr = report['equipmentName']?.toString() ?? report['equipment']?.toString() ?? '';
-                final String statusStr = report['status']?.toString() ?? 'Pending';
+                final String idStr = report['reportId']?.toString() ?? report['id']?.toString() ?? 'N/A';
+                final String dateStr = report['reportCreateDate']?.toString() ?? report['createdDate']?.toString() ?? 'Unknown Date';
+                final String schedStr = report['registrationScheduleName']?.toString() ?? report['className']?.toString() ?? 'N/A';
+                final String titleStr = report['reportTitle']?.toString() ?? report['categoryName']?.toString() ?? 'Sự cố thiết bị';
+                final String equipStr = report['equipmentName']?.toString() ?? report['equipmentId']?.toString() ?? '';
+                final String statusStr = report['reportStatus']?.toString() ?? report['status']?.toString() ?? 'Pending';
                 
                 Color statusColor = Colors.orange;
                 if (statusStr.toLowerCase().contains('done') || statusStr.toLowerCase().contains('xử lý')) {
@@ -181,9 +180,9 @@ class _CommonReportHistoryScreenState extends State<CommonReportHistoryScreen> {
                       const SizedBox(height: 16),
                       _buildInfoRow(Icons.calendar_today_outlined, 'Ngày gửi', dateStr),
                       const SizedBox(height: 12),
-                      _buildInfoRow(Icons.class_outlined, 'Class', '$classStr - $slotStr'),
+                      _buildInfoRow(Icons.class_outlined, 'Lịch Lab', schedStr),
                       const SizedBox(height: 12),
-                      _buildInfoRow(Icons.warning_amber_rounded, 'Sự cố', categoryStr),
+                      _buildInfoRow(Icons.warning_amber_rounded, 'Sự cố', titleStr),
                       if (equipStr.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         _buildInfoRow(Icons.qr_code_scanner, 'Equipment', equipStr),

@@ -319,10 +319,12 @@ class _MyClassesScheduleScreenState extends State<MyClassesScheduleScreen> {
     return InkWell(
       onTap: () {
         if (rawId == null) return;
+        final scheduleId = s['registraionScheduleId'] ?? s['registrationScheduleId'] ?? rawId;
+        
         if (widget.role == 'student') {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => StudentTeamsListScreen(classData: {"classId": rawId, "className": className})));
+          Navigator.push(context, MaterialPageRoute(builder: (_) => StudentTeamsListScreen(classData: {"classId": rawId, "className": className, "registraionScheduleId": scheduleId})));
         } else {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => LecturerTeamsListScreen(classData: {"classId": rawId, "className": className})));
+          Navigator.push(context, MaterialPageRoute(builder: (_) => LecturerTeamsListScreen(classData: {"classId": rawId, "className": className, "registraionScheduleId": scheduleId})));
         }
       },
       child: Container(

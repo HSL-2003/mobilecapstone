@@ -80,8 +80,21 @@ class UserService {
     return ApiResponse.fromResponse(response);
   }
 
+  Future<ApiResponse> getClassById(int classId) async {
+    final response = await _apiService.defaultDio.get('/api/class/$classId');
+    return ApiResponse.fromResponse(response);
+  }
+
   Future<ApiResponse> getTeamsByClassId(int classId) async {
     final response = await _apiService.defaultDio.get('/api/team/class/$classId');
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> createTeam(Map<String, dynamic> payload) async {
+    final response = await _apiService.defaultDio.post(
+      '/api/team',
+      data: payload,
+    );
     return ApiResponse.fromResponse(response);
   }
 
@@ -207,10 +220,41 @@ class UserService {
     return ApiResponse.fromResponse(response);
   }
 
+  Future<ApiResponse> getGradeByTeamId(int teamId) async {
+    final response = await _apiService.defaultDio.get('/api/grade/team/$teamId');
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> getGradesByScheduleId(int scheduleId) async {
+    final response = await _apiService.defaultDio.get('/api/grade/registration/$scheduleId');
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> getMyGrades() async {
+    final response = await _apiService.defaultDio.get('/api/gradedescription/mygrade');
+    return ApiResponse.fromResponse(response);
+  }
+
   Future<ApiResponse> submitGrade(int labId, int teamId, Map<String, dynamic> payload) async {
     final response = await _apiService.defaultDio.post(
       '/api/grade/labs/$labId/teams/$teamId/grade', 
       data: payload
+    );
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> gradeForTeam(Map<String, dynamic> payload) async {
+    final response = await _apiService.defaultDio.post(
+      '/api/grade/gradeforteam',
+      data: payload,
+    );
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> updateGrade(Map<String, dynamic> payload) async {
+    final response = await _apiService.defaultDio.put(
+      '/api/grade/update',
+      data: payload,
     );
     return ApiResponse.fromResponse(response);
   }

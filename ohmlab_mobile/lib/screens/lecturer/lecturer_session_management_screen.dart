@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:ohm_lab_mobile/services/user_services.dart';
 import 'package:ohm_lab_mobile/services/report_services.dart';
 import '../common/common_report_incident_screen.dart';
@@ -322,6 +323,7 @@ class _GradingTabState extends State<_GradingTab> {
   int _teamId = 0;
   int _labId = 0;
   int _classId = 0;
+  int _scheduleId = 0;
 
   @override
   void initState() {
@@ -334,11 +336,13 @@ class _GradingTabState extends State<_GradingTab> {
       final tIdRaw = widget.teamData!['teamId'] ?? widget.teamData!['id'];
       final lIdRaw = widget.teamData!['labId'] ?? widget.teamData!['labId'] ?? 0;
       final cIdRaw = widget.teamData!['classId'] ?? widget.teamData!['subjectId'] ?? 0;
+      final sIdRaw = widget.teamData!['registraionScheduleId'] ?? 0;
 
       // Cố gắng parse int
       _teamId = int.tryParse(tIdRaw.toString()) ?? 0;
       _labId = int.tryParse(lIdRaw.toString()) ?? 0;
       _classId = int.tryParse(cIdRaw.toString()) ?? 0;
+      _scheduleId = int.tryParse(sIdRaw.toString()) ?? 0;
     }
 
     if (_teamId == 0) {
@@ -351,15 +355,17 @@ class _GradingTabState extends State<_GradingTab> {
 
     // Try fetching existing grade
     try {
-      final res = await _userService.getGrade(_labId, _teamId);
+      final res = await _userService.getGradeByTeamId(_teamId);
       if (res.status == 200 || res.status == 201) {
         if (res.data != null && res.data is Map) {
           final payload = res.data.containsKey('data') ? res.data['data'] : res.data;
-          if (payload is Map && payload.isNotEmpty) {
-            _gradeCtrl.text = payload['grade']?.toString() ?? '';
-            _descCtrl.text = payload['gradeDescription']?.toString() ?? '';
-             // Cập nhật lại classId / labId từ response nếu có
-             if (payload['classId'] != null) _classId = int.tryParse(payload['classId'].toString()) ?? _classId;
+          if (payload is List) {
+             // Find the grade that matches the current schedule
+             final match = payload.firstWhere((g) => g is Map && (g['registraionScheduleId'] == _scheduleId || g['registrationScheduleId'] == _scheduleId), orElse: () => null);
+             if (match != null) {
+                _gradeCtrl.text = match['gradeScore']?.toString() ?? '';
+                _descCtrl.text = match['gradeDescription']?.toString() ?? '';
+             }
           }
         }
       }
@@ -386,24 +392,42 @@ class _GradingTabState extends State<_GradingTab> {
       return;
     }
 
+    if (_scheduleId == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Không tìm thấy Schedule ID! Vui lòng quay lại màn hình Lịch và chọn lại môn học.'), backgroundColor: Colors.orange));
+      return;
+    }
+
     setState(() { _isSaving = true; });
 
     final payload = {
-      "classId": _classId,
-      "grade": gradeVal,
-      "gradeDescription": _descCtrl.text.trim(),
-      "gradeStatus": "Graded"
+      "registraionScheduleId": _scheduleId,
+      "teamId": _teamId,
+      "gradeScore": gradeVal == gradeVal.toInt() ? gradeVal.toInt() : gradeVal,
+      "gradeDescription": _descCtrl.text.trim().isEmpty ? "None" : _descCtrl.text.trim()
     };
 
     try {
-      final res = await _userService.submitGrade(_labId, _teamId, payload);
+      final res = await _userService.gradeForTeam(payload);
       if (res.status == 200 || res.status == 201) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Grade saved successfully!'), backgroundColor: Colors.green));
       } else {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res.message ?? 'Failed to save grade.'), backgroundColor: Colors.red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error connecting to server.'), backgroundColor: Colors.red));
+      String errMsg = e.toString();
+      if (e is DioException && e.response != null) {
+        final data = e.response?.data;
+        if (data is Map) {
+           errMsg = data['message'] ?? data['title'] ?? data.toString();
+           if (data.containsKey('errors') && data['errors'] is Map) {
+              final errMap = data['errors'] as Map;
+              errMsg += ': ' + errMap.values.map((v) => v.toString()).join(', ');
+           }
+        } else {
+           errMsg = data?.toString() ?? e.message ?? 'Lỗi kết nối';
+        }
+      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $errMsg'), backgroundColor: Colors.red));
     } finally {
       if (mounted) setState(() { _isSaving = false; });
     }
