@@ -151,6 +151,16 @@ class UserService {
     return ApiResponse.fromResponse(response);
   }
 
+  Future<ApiResponse> getEquipmentById(String equipmentId) async {
+    final response = await _apiService.defaultDio.get('/api/equipment/$equipmentId');
+    return ApiResponse.fromResponse(response);
+  }
+
+  Future<ApiResponse> getKitById(String kitId) async {
+    final response = await _apiService.defaultDio.get('/api/kit/$kitId');
+    return ApiResponse.fromResponse(response);
+  }
+
   Future<ApiResponse> getRegistrationSchedulesByTeacherId(String teacherId) async {
     final response = await _apiService.defaultDio.get('/api/registrationschedule/listregistrationschedulebyteacherid/$teacherId');
     return ApiResponse.fromResponse(response);

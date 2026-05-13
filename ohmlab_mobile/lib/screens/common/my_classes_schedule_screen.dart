@@ -80,20 +80,26 @@ class _MyClassesScheduleScreenState extends State<MyClassesScheduleScreen> {
       }
 
       // 2. Lấy danh sách RegistrationSchedules (Lịch thực hành chi tiết)
+      List<dynamic> rawSchedules = [];
       if (widget.role == 'lecturer') {
         final schedRes = await _userService.getRegistrationSchedulesByTeacherId(fetchedId);
         if (schedRes.status == 200 || schedRes.status == 201) {
           final data = schedRes.data;
-          _schedules = data is List ? data : (data is Map && data.containsKey('data') ? data['data'] : []);
+          rawSchedules = data is List ? data : (data is Map && data.containsKey('data') ? data['data'] : []);
         }
       } else {
-        // Đối với Student, sử dụng API getRegistrationSchedulesByStudentId
         final schedRes = await _userService.getRegistrationSchedulesByStudentId(fetchedId);
         if (schedRes.status == 200 || schedRes.status == 201) {
           final data = schedRes.data;
-          _schedules = data is List ? data : (data is Map && data.containsKey('data') ? data['data'] : []);
+          rawSchedules = data is List ? data : (data is Map && data.containsKey('data') ? data['data'] : []);
         }
       }
+
+      // Filter: Chỉ hiển thị lịch có trạng thái là Accept
+      _schedules = rawSchedules.where((s) {
+        final status = (s['registraionScheduleStatus'] ?? s['registrationScheduleStatus'] ?? s['status'] ?? '').toString().toLowerCase();
+        return status.contains('accept');
+      }).toList();
 
       if (mounted) setState(() => _isLoading = false);
     } catch (e) {

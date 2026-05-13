@@ -48,12 +48,27 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
           if (res.status == 200 || res.status == 201) {
             final data = res.data;
             List<dynamic> all = data is List ? data : (data is Map && data.containsKey('data') ? data['data'] : []);
-            // Lọc lịch đang InProgress (đã check-in, đang sử dụng phòng)
+            
+            // Lọc lịch đang InProgress
+            List<dynamic> inProgress = all.where((s) {
+              final status = (s['registraionScheduleStatus'] ?? s['registrationScheduleStatus'] ?? s['status'] ?? '').toString().toLowerCase();
+              return status == 'inprogress' || status == 'in_progress' || status == 'in progress';
+            }).toList();
+
+            // Sắp xếp ngày mới nhất lên trên
+            inProgress.sort((a, b) {
+              String dateA = a['registraionScheduleDate'] ?? a['registrationScheduleDate'] ?? a['date'] ?? '';
+              String timeA = a['slotStartTime'] ?? a['startTime'] ?? '';
+              String dateB = b['registraionScheduleDate'] ?? b['registrationScheduleDate'] ?? b['date'] ?? '';
+              String timeB = b['slotStartTime'] ?? b['startTime'] ?? '';
+              
+              DateTime dtA = DateTime.tryParse('$dateA $timeA') ?? DateTime.tryParse(dateA) ?? DateTime(1970);
+              DateTime dtB = DateTime.tryParse('$dateB $timeB') ?? DateTime.tryParse(dateB) ?? DateTime(1970);
+              return dtB.compareTo(dtA);
+            });
+
             setState(() {
-              _schedules = all.where((s) {
-                final status = (s['registraionScheduleStatus'] ?? s['registrationScheduleStatus'] ?? s['status'] ?? '').toString().toLowerCase();
-                return status == 'inprogress' || status == 'in_progress' || status == 'in progress';
-              }).toList();
+              _schedules = inProgress;
               _isLoadingSchedules = false;
             });
           } else {
@@ -232,104 +247,47 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
                               ],
                             ),
                           ))
-                    : ListView.builder(
-                        shrinkWrap: widget.isEmbedded,
+                    : SingleChildScrollView(
                         physics: widget.isEmbedded ? const NeverScrollableScrollPhysics() : const AlwaysScrollableScrollPhysics(),
                         padding: widget.isEmbedded ? const EdgeInsets.only(top: 0, bottom: 10) : const EdgeInsets.only(top: 90, left: 20, right: 20, bottom: 24),
-                          itemCount: _schedules.length,
-                          itemBuilder: (context, index) {
-                            final s = _schedules[index];
-                            final String roomName = s['roomName'] ?? s['room']?['roomName'] ?? 'Phòng N/A';
-                            final String date = s['registraionScheduleDate'] ?? s['registrationScheduleDate'] ?? s['date'] ?? 'N/A';
-                            final String startTime = s['slotStartTime'] ?? s['startTime'] ?? '';
-                            final String endTime = s['slotEndTime'] ?? s['endTime'] ?? '';
-                            final String status = s['registraionScheduleStatus'] ?? s['registrationScheduleStatus'] ?? s['status'] ?? 'N/A';
-                            final String? existingImgUrl = s['registraionSchedule_Url_Img_Checkout']?.toString();
-
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 16),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5))],
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (_schedules.isNotEmpty) _buildScheduleCard(_schedules.first),
+                            
+                            if (_schedules.length > 1) ...[
+                              const SizedBox(height: 24),
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withOpacity(0.05),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: Colors.red.withOpacity(0.2)),
+                                ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
                                       children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(10),
-                                          decoration: BoxDecoration(color: const Color(0xFFF26F21).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                                          child: const Icon(Icons.meeting_room, color: Color(0xFFF26F21), size: 22),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(roomName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: Color(0xFF1E1E1E))),
-                                              Row(
-                                                children: [
-                                                  Icon(Icons.calendar_today, size: 13, color: Colors.grey[500]),
-                                                  const SizedBox(width: 4),
-                                                  Flexible(
-                                                    child: Text(
-                                                      '${date.split('T')[0]}  $startTime-$endTime', 
-                                                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                                                      overflow: TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                          decoration: BoxDecoration(color: const Color(0xFFF26F21).withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                                          child: Text(status, style: const TextStyle(color: Color(0xFFF26F21), fontWeight: FontWeight.bold, fontSize: 11)),
-                                        ),
+                                        Icon(Icons.warning_amber_rounded, color: Colors.red[700], size: 24),
+                                        const SizedBox(width: 8),
+                                        Expanded(child: Text('Forgotten Checkouts', style: TextStyle(color: Colors.red[800], fontWeight: FontWeight.bold, fontSize: 16))),
                                       ],
                                     ),
-                                    if (existingImgUrl != null && existingImgUrl.isNotEmpty && existingImgUrl != 'null') ...[
-                                      const SizedBox(height: 12),
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: Image.network(existingImgUrl, height: 120, width: double.infinity, fit: BoxFit.cover),
-                                      ),
-                                    ],
+                                    const SizedBox(height: 8),
+                                    Text('These lab sessions were not checked out. Please report them to the Head of Department.', style: TextStyle(color: Colors.red[700], fontSize: 13)),
                                     const SizedBox(height: 16),
-                                    const Divider(height: 1, color: Color(0xFFF0F0F0)),
-                                    const SizedBox(height: 16),
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: ElevatedButton.icon(
-                                        onPressed: _isUploading ? null : () => _startCheckOut(s),
-                                        icon: _isUploading
-                                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                            : const Icon(Icons.camera_alt, size: 18),
-                                        label: Text(
-                                          _isUploading ? 'Uploading image...' : 'Check_Out',
-                                          style: const TextStyle(fontWeight: FontWeight.bold),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFFF26F21),
-                                          foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(vertical: 14),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                          elevation: 0,
-                                        ),
-                                      ),
-                                    ),
+                                    ..._schedules.sublist(1).map((s) => Padding(
+                                      padding: const EdgeInsets.only(bottom: 12),
+                                      child: _buildForgottenScheduleCard(s),
+                                    )).toList(),
                                   ],
                                 ),
                               ),
-                            );
-                          },
+                            ]
+                          ],
                         ),
+                      ),
           // Loading overlay khi đang upload
           if (_isUploading)
             Container(
@@ -375,6 +333,131 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
         ),
       ),
       body: content,
+    );
+  }
+
+  Widget _buildScheduleCard(Map<String, dynamic> s) {
+    final String roomName = s['roomName'] ?? s['room']?['roomName'] ?? 'Phòng N/A';
+    final String date = s['registraionScheduleDate'] ?? s['registrationScheduleDate'] ?? s['date'] ?? 'N/A';
+    final String startTime = s['slotStartTime'] ?? s['startTime'] ?? '';
+    final String endTime = s['slotEndTime'] ?? s['endTime'] ?? '';
+    final String status = s['registraionScheduleStatus'] ?? s['registrationScheduleStatus'] ?? s['status'] ?? 'N/A';
+    final String? existingImgUrl = s['registraionSchedule_Url_Img_Checkout']?.toString();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5))],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: const Color(0xFFF26F21).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                  child: const Icon(Icons.meeting_room, color: Color(0xFFF26F21), size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(roomName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: Color(0xFF1E1E1E))),
+                      Row(
+                        children: [
+                          Icon(Icons.calendar_today, size: 13, color: Colors.grey[500]),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              '${date.split('T')[0]}  $startTime-$endTime', 
+                              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(color: const Color(0xFFF26F21).withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                  child: Text(status, style: const TextStyle(color: Color(0xFFF26F21), fontWeight: FontWeight.bold, fontSize: 11)),
+                ),
+              ],
+            ),
+            if (existingImgUrl != null && existingImgUrl.isNotEmpty && existingImgUrl != 'null') ...[
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(existingImgUrl, height: 120, width: double.infinity, fit: BoxFit.cover),
+              ),
+            ],
+            const SizedBox(height: 16),
+            const Divider(height: 1, color: Color(0xFFF0F0F0)),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _isUploading ? null : () => _startCheckOut(s),
+                icon: _isUploading
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Icon(Icons.camera_alt, size: 18),
+                label: Text(
+                  _isUploading ? 'Uploading image...' : 'Check_Out',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF26F21),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildForgottenScheduleCard(Map<String, dynamic> s) {
+    final String roomName = s['roomName'] ?? s['room']?['roomName'] ?? 'Phòng N/A';
+    final String date = s['registraionScheduleDate'] ?? s['registrationScheduleDate'] ?? s['date'] ?? 'N/A';
+    final String startTime = s['slotStartTime'] ?? s['startTime'] ?? '';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.withOpacity(0.2)),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), shape: BoxShape.circle),
+          child: const Icon(Icons.warning, color: Colors.red, size: 20),
+        ),
+        title: Text('$roomName', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        subtitle: Text('Date: ${date.split('T')[0]} $startTime', style: TextStyle(color: Colors.grey[700], fontSize: 12)),
+        trailing: OutlinedButton(
+          onPressed: _isUploading ? null : () => _startCheckOut(s),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.red,
+            side: BorderSide(color: Colors.red.withOpacity(0.5)),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+          ),
+          child: const Text('Checkout Now', style: TextStyle(fontSize: 12)),
+        ),
+      ),
     );
   }
 }

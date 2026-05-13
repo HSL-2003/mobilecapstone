@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:ohm_lab_mobile/services/user_services.dart';
 import 'package:ohm_lab_mobile/services/report_services.dart';
 import 'lecturer_equipment_history_screen.dart';
@@ -65,12 +68,18 @@ class _GlobalEquipmentScanner extends StatefulWidget {
 }
 
 class _GlobalEquipmentScannerState extends State<_GlobalEquipmentScanner> {
-  final TextEditingController _qrController = TextEditingController();
-  final ReportService _reportService = ReportService();
   final UserService _userService = UserService();
+  final MobileScannerController _scannerController = MobileScannerController();
+  final ImagePicker _imagePicker = ImagePicker();
   
   bool _isLoadingEquip = true;
   List<dynamic> _equipments = [];
+
+  @override
+  void dispose() {
+    _scannerController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -108,13 +117,58 @@ class _GlobalEquipmentScannerState extends State<_GlobalEquipmentScanner> {
     }
   }
 
-  Future<void> _verifyQR() async {
-    final qr = _qrController.text.trim();
-    if (qr.isEmpty) return;
-    
-    // Đóng bàn phím
+  void _simulateScan() {
+    if (_equipments.isNotEmpty) {
+      final first = _equipments.first;
+      final String id = (first['equipmentId'] ?? first['id'])?.toString() ?? '';
+      if (id.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Simulating scan for first item...'), duration: Duration(seconds: 1)));
+        _fetchAndShowEquipmentById(context, id);
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No equipment available to simulate scan.')));
+    }
+  }
+
+  Future<void> _pickAndScanImage() async {
+    final XFile? image = await _imagePicker.pickImage(source: ImageSource.gallery);
+    if (image == null) return;
+    final BarcodeCapture? capture = await _scannerController.analyzeImage(image.path);
+    if (capture != null && capture.barcodes.isNotEmpty) {
+      final String? code = capture.barcodes.first.rawValue;
+      if (code != null && mounted) _onQRScanned(context, code);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kh�ng t�m th?y m� QR trong ?nh!'), backgroundColor: Colors.red));
+    }
+  }
+
+  void _onQRScanned(BuildContext context, String scannedCode) {
     FocusScope.of(context).unfocus();
 
+    // Parse URL để lấy equipmentId từ path cuối cùng
+    // Ví dụ: https://swd392be.io.vn/equipment/G8goZ → G8goZ
+    String equipmentId = scannedCode.trim();
+    try {
+      final uri = Uri.parse(scannedCode);
+      if (uri.pathSegments.isNotEmpty) {
+        equipmentId = uri.pathSegments.last;
+      }
+    } catch (_) {
+      // Nếu không parse được URL, dùng nguyên giá trị scan
+    }
+
+    if (equipmentId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Không đọc được mã QR!'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    // Gọi API để lấy thông tin thiết bị
+    _fetchAndShowEquipmentById(context, equipmentId);
+  }
+
+  Future<void> _fetchAndShowEquipmentById(BuildContext context, String equipmentId) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -122,19 +176,42 @@ class _GlobalEquipmentScannerState extends State<_GlobalEquipmentScanner> {
     );
 
     try {
-      // Dùng "0" cho ID mặc định khi không nằm trong class cụ thể
-      final res = await _reportService.verifyEquipmentQR("0", qr);
-      Navigator.pop(context);
-      
+      final res = await _userService.getEquipmentById(equipmentId);
+      if (context.mounted) Navigator.pop(context);
+
       if (res.status == 200 || res.status == 201) {
-         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Xác nhận mã thiết bị hợp lệ!'), backgroundColor: Colors.green));
-         _qrController.clear();
+        final payload = res.data;
+        Map<String, dynamic>? equip;
+        if (payload is Map && payload.containsKey('data')) {
+          final d = payload['data'];
+          equip = d is Map ? Map<String, dynamic>.from(d) : null;
+        } else if (payload is Map) {
+          equip = Map<String, dynamic>.from(payload);
+        }
+
+        if (equip != null && context.mounted) {
+          _showEquipmentDetailDialog(context, equip);
+        } else {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Không tìm thấy thiết bị với ID: $equipmentId'), backgroundColor: Colors.red),
+            );
+          }
+        }
       } else {
-         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res.message ?? 'Mã QR không hợp lệ'), backgroundColor: Colors.red));
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(res.message ?? 'Không thể lấy thông tin thiết bị'), backgroundColor: Colors.red),
+          );
+        }
       }
     } catch (e) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('QR code check connection error'), backgroundColor: Colors.red));
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Lỗi kết nối server'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -143,61 +220,68 @@ class _GlobalEquipmentScannerState extends State<_GlobalEquipmentScanner> {
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
-        const Text('Global Equipment Scanner', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
+        const Text('Scan Equipment QR', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
+        const SizedBox(height: 8),
+        const Text('Quét mã QR dán trên thiết bị để xem thông tin và phân bổ cho team.', style: TextStyle(color: Colors.black54, fontSize: 13, height: 1.5)),
         const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white, 
-            borderRadius: BorderRadius.circular(24), 
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 4))],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Nhập hoặc quét mã thiết bị bất kỳ để tìm kiếm thông tin nhanh.', style: TextStyle(color: Colors.black54, fontSize: 13, height: 1.5)),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _qrController,
-                      decoration: InputDecoration(
-                        hintText: 'QR Code (e.g., OSC-01)',
-                        filled: true,
-                        fillColor: Colors.grey[50],
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE))),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFF26F21))),
-                        prefixIcon: const Icon(Icons.qr_code_scanner, color: Color(0xFFF26F21)),
-                      ),
-                      onFieldSubmitted: (_) => _verifyQR(),
+
+        // Camera QR Scanner Box
+        if (_isLoadingEquip)
+          const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator(color: Color(0xFFF26F21))))
+        else
+          Container(
+            height: 260,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFF26F21).withOpacity(0.4), width: 2),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 16, offset: const Offset(0, 6))],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              children: [
+                MobileScanner(controller: _scannerController,
+                  onDetect: (capture) {
+                    final barcode = capture.barcodes.firstOrNull;
+                    if (barcode?.rawValue != null) {
+                      _onQRScanned(context, barcode!.rawValue!);
+                    }
+                  },
+                ),
+                // Corner overlays for QR viewfinder
+                Positioned.fill(
+                  child: CustomPaint(painter: _QRViewfinderPainter()),
+                ),
+                Positioned(
+                  top: 12, right: 12,
+                  child: Container(
+                    decoration: BoxDecoration(color: Colors.black.withOpacity(0.5), borderRadius: BorderRadius.circular(12)),
+                    child: IconButton(
+                      icon: const Icon(Icons.photo_library, color: Colors.white),
+                      tooltip: 'T?i ?nh QR t? thu vi?n',
+                      onPressed: _pickAndScanImage,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Container(
-                    height: 56,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [Color(0xFFF26F21), Color(0xFFFFA726)]),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [BoxShadow(color: const Color(0xFFF26F21).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
-                    ),
-                    child: ElevatedButton(
-                      onPressed: _verifyQR,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                      ),
-                      child: const Text('Check', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                ),
+                Positioned(
+                  top: 12, right: 64,
+                  child: Container(
+                    decoration: BoxDecoration(color: Colors.black.withOpacity(0.5), borderRadius: BorderRadius.circular(12)),
+                    child: IconButton(
+                      icon: const Icon(Icons.center_focus_strong, color: Colors.white),
+                      tooltip: 'Gi? l?p Qu�t (Test)',
+                      onPressed: _simulateScan,
                     ),
                   ),
-                ],
-              ),
-            ],
+                ),
+                const Positioned(
+                  bottom: 12, left: 0, right: 0,
+                  child: Center(
+                    child: Text('Đưa mã QR vào khung để quét', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
         const SizedBox(height: 32),
         const Text('All Active Equipment', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
         const SizedBox(height: 16),
@@ -207,59 +291,236 @@ class _GlobalEquipmentScannerState extends State<_GlobalEquipmentScanner> {
            const Center(child: Padding(padding: EdgeInsets.all(20), child: Text('No issued equipment data.', style: TextStyle(color: Colors.grey))))
         else
            ..._equipments.map((equip) {
-              final name = equip['equipmentName'] ?? equip['name'] ?? equip['equipmentCode'] ?? 'Unknown Equipment';
-              final qty = equip['quantity'] ?? 1;
-              final desc = equip['description'] ?? '';
-              final title = desc.isNotEmpty ? '$name ($desc)' : name;
-              final status = equip['status']?.toString() ?? '';
-              
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey[200]!),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: const Color(0xFFFFF3E0), borderRadius: BorderRadius.circular(8)),
-                      child: const Icon(Icons.build, color: Color(0xFFF26F21), size: 18),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                           Text('$title x$qty', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Color(0xFF1E1E1E))),
-                            if (status.isNotEmpty) 
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Text('Status: $status', style: const TextStyle(fontSize: 12, color: Colors.black54)),
-                              )
+              final String equipName = equip['equipmentName'] ?? equip['name'] ?? equip['equipmentCode'] ?? 'Unknown Equipment';
+              final String equipCode = equip['equipmentCode']?.toString() ?? '-';
+              final String roomId = equip['roomId']?.toString() ?? equip['roomName']?.toString() ?? 'N/A';
+              final String equipStatus = equip['equipmentStatus']?.toString() ?? equip['status']?.toString() ?? 'N/A';
+              final String equipTypeName = equip['equipmentTypeName']?.toString() ?? '';
+              final String? qrBase64 = equip['equipmentQr']?.toString();
+
+              Color statusColor = Colors.grey;
+              if (equipStatus.toLowerCase() == 'available') statusColor = Colors.green;
+              if (equipStatus.toLowerCase() == 'in use' || equipStatus.toLowerCase() == 'inuse') statusColor = Colors.orange;
+              if (equipStatus.toLowerCase() == 'broken') statusColor = Colors.red;
+
+              return GestureDetector(
+                onTap: () { final String rawId = (equip['equipmentId'] ?? equip['id'])?.toString() ?? ''; if (rawId.isNotEmpty) _fetchAndShowEquipmentById(context, rawId); },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey[200]!),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: qrBase64 != null ? const Color(0xFFFFF3E0) : Colors.grey[100]!,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.build, color: Color(0xFFF26F21), size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(equipName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF1E1E1E))),
+                            const SizedBox(height: 2),
+                            Text('Code: $equipCode', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                            Text('Room ID: $roomId  |  $equipTypeName', style: TextStyle(fontSize: 12, color: Colors.grey[500])),
                           ],
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.handshake_outlined, color: Color(0xFFF26F21)),
-                        tooltip: 'Mượn cho Team',
-                        onPressed: () {
-                          final String rawId = (equip['id'] ?? equip['equipmentId'])?.toString() ?? '';
-                          final String name = equip['name'] ?? equip['equipmentName'] ?? equip['equipmentCode'] ?? '';
-                          if (rawId.isNotEmpty) {
-                            _showBorrowBottomSheet(context, rawId, name);
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thiết bị không hợp lệ (Mất ID).')));
-                          }
-                        },
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: statusColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(equipStatus, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusColor)),
+                          ),
+                          const SizedBox(height: 6),
+                          IconButton(
+                            icon: const Icon(Icons.handshake_outlined, color: Color(0xFFF26F21)),
+                            tooltip: 'Mượn cho Team',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: () {
+                              final String rawId = (equip['id'] ?? equip['equipmentId'])?.toString() ?? '';
+                              if (rawId.isNotEmpty) {
+                                _showBorrowBottomSheet(context, rawId, equipName);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thiết bị không hợp lệ (Mất ID).')));
+                              }
+                            },
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                );
+                ),
+              );
            }).toList(),
+
       ],
+    );
+  }
+
+  void _showEquipmentDetailDialog(BuildContext context, Map<String, dynamic> equip) {
+    final String equipId = (equip['equipmentId'] ?? equip['id'] ?? '-').toString();
+    final String equipName = equip['equipmentName'] ?? equip['name'] ?? 'Unknown';
+    final String equipCode = equip['equipmentCode']?.toString() ?? '-';
+    final String serial = equip['equipmentNumberSerial']?.toString() ?? '-';
+    final String roomId = equip['roomId']?.toString() ?? equip['roomName']?.toString() ?? 'N/A';
+
+    final String equipStatus = equip['equipmentStatus']?.toString() ?? equip['status']?.toString() ?? 'N/A';
+    final String equipTypeName = equip['equipmentTypeName']?.toString() ?? '';
+    final String desc = equip['equipmentDescription']?.toString() ?? '';
+    final String? qrBase64 = equip['equipmentQr']?.toString();
+    final String? typeImgUrl = equip['equipmentTypeUrlImg']?.toString();
+
+    Color statusColor = Colors.grey;
+    if (equipStatus.toLowerCase() == 'available') statusColor = Colors.green;
+    if (equipStatus.toLowerCase() == 'in use' || equipStatus.toLowerCase() == 'inuse') statusColor = Colors.orange;
+    if (equipStatus.toLowerCase() == 'broken') statusColor = Colors.red;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        padding: EdgeInsets.only(
+          left: 24, right: 24, top: 24,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (typeImgUrl != null && typeImgUrl.isNotEmpty && typeImgUrl != 'string')
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(typeImgUrl, width: 64, height: 64, fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Icon(Icons.build, size: 48, color: Color(0xFFF26F21))),
+                    )
+                  else
+                    Container(
+                      width: 64, height: 64,
+                      decoration: BoxDecoration(color: const Color(0xFFFFF3E0), borderRadius: BorderRadius.circular(12)),
+                      child: const Icon(Icons.build, size: 36, color: Color(0xFFF26F21)),
+                    ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(equipName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFF1E1E1E))),
+                        const SizedBox(height: 4),
+                        Text(equipTypeName, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                          child: Text(equipStatus, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: statusColor)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              _buildDetailRow(Icons.fingerprint, 'Equipment ID', equipId),
+              _buildDetailRow(Icons.qr_code, 'Equipment Code', equipCode),
+              _buildDetailRow(Icons.tag, 'Serial Number', serial),
+              _buildDetailRow(Icons.meeting_room, 'Room ID', roomId),
+
+              if (desc.isNotEmpty && desc != 'string') _buildDetailRow(Icons.info_outline, 'Description', desc),
+              if (qrBase64 != null && qrBase64.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                const Text('Equipment QR Code', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E1E1E))),
+                const SizedBox(height: 12),
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 4))],
+                      border: Border.all(color: Colors.grey[200]!),
+                    ),
+                    child: Builder(
+                      builder: (_) {
+                        try {
+                          final bytes = base64Decode(qrBase64);
+                          return Image.memory(bytes, width: 200, height: 200, fit: BoxFit.contain);
+                        } catch (_) {
+                          return const Text('QR code unavailable', style: TextStyle(color: Colors.grey));
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    final String rawId = (equip['id'] ?? equip['equipmentId'])?.toString() ?? '';
+                    if (rawId.isNotEmpty) {
+                      _showBorrowBottomSheet(context, rawId, equipName);
+                    }
+                  },
+                  icon: const Icon(Icons.handshake_outlined),
+                  label: const Text('Borrow for Team', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF26F21),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: Colors.grey[500]),
+          const SizedBox(width: 10),
+          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF1E1E1E))),
+          Expanded(child: Text(value, style: TextStyle(fontSize: 14, color: Colors.grey[700]))),
+        ],
+      ),
     );
   }
 
@@ -285,12 +546,20 @@ class _BorrowEquipmentForm extends StatefulWidget {
 
 class _BorrowEquipmentFormState extends State<_BorrowEquipmentForm> {
   final UserService _userService = UserService();
+  final MobileScannerController _scannerController = MobileScannerController();
+  final ImagePicker _imagePicker = ImagePicker();
   
   final _teamIdController = TextEditingController();
   final _nameController = TextEditingController();
   final _descController = TextEditingController();
   
   bool _isSaving = false;
+
+  @override
+  void dispose() {
+    _scannerController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -409,4 +678,55 @@ class _BorrowEquipmentFormState extends State<_BorrowEquipmentForm> {
       ),
     );
   }
+}
+
+/// Custom painter for QR scanner viewfinder corners
+class _QRViewfinderPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    const cornerSize = 24.0;
+    const strokeWidth = 3.0;
+    final paint = Paint()
+      ..color = const Color(0xFFF26F21)
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    // Semi-dark overlay
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Paint()..color = Colors.black.withOpacity(0.3),
+    );
+
+    // Center clear area
+    final centerX = size.width / 2;
+    final centerY = size.height / 2;
+    final boxSize = size.width * 0.55;
+    final left = centerX - boxSize / 2;
+    final top = centerY - boxSize / 2;
+    final right = centerX + boxSize / 2;
+    final bottom = centerY + boxSize / 2;
+
+    canvas.drawRect(
+      Rect.fromLTRB(left, top, right, bottom),
+      Paint()..color = Colors.transparent..blendMode = BlendMode.clear,
+    );
+
+    // Corners
+    // Top-left
+    canvas.drawLine(Offset(left, top + cornerSize), Offset(left, top), paint);
+    canvas.drawLine(Offset(left, top), Offset(left + cornerSize, top), paint);
+    // Top-right
+    canvas.drawLine(Offset(right - cornerSize, top), Offset(right, top), paint);
+    canvas.drawLine(Offset(right, top), Offset(right, top + cornerSize), paint);
+    // Bottom-left
+    canvas.drawLine(Offset(left, bottom - cornerSize), Offset(left, bottom), paint);
+    canvas.drawLine(Offset(left, bottom), Offset(left + cornerSize, bottom), paint);
+    // Bottom-right
+    canvas.drawLine(Offset(right - cornerSize, bottom), Offset(right, bottom), paint);
+    canvas.drawLine(Offset(right, bottom), Offset(right, bottom - cornerSize), paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

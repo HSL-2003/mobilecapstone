@@ -34,6 +34,9 @@ dependencies:
   # Image picker for checkout photo
   image_picker: ^1.1.2
 
+  # QR code scanner via camera
+  mobile_scanner: ^6.0.5
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

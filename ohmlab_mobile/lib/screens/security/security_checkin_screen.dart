@@ -53,7 +53,11 @@ class _SecurityCheckInScreenState extends State<SecurityCheckInScreen> {
           }
         }
         setState(() {
-          _schedules = all;
+          // Filter: Chỉ hiển thị lịch có trạng thái là Accept
+          _schedules = all.where((s) {
+            final status = (s['registraionScheduleStatus'] ?? s['registrationScheduleStatus'] ?? s['status'] ?? '').toString().toLowerCase();
+            return status.contains('accept');
+          }).toList();
           _isLoading = false;
         });
       } else {
