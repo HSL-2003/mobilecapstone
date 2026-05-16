@@ -95,10 +95,10 @@ class _MyClassesScheduleScreenState extends State<MyClassesScheduleScreen> {
         }
       }
 
-      // Filter: Chỉ hiển thị lịch có trạng thái là Accept
+      // Filter: Hiển thị tất cả trừ các lịch có trạng thái là Pending
       _schedules = rawSchedules.where((s) {
         final status = (s['registraionScheduleStatus'] ?? s['registrationScheduleStatus'] ?? s['status'] ?? '').toString().toLowerCase();
-        return status.contains('accept');
+        return status != 'pending';
       }).toList();
 
       if (mounted) setState(() => _isLoading = false);

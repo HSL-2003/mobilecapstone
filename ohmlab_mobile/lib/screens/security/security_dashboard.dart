@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'security_room_status_screen.dart';
 import 'security_checkin_screen.dart';
+import '../common/schedule_history_screen.dart';
 
 class SecurityDashboard extends StatelessWidget {
   const SecurityDashboard({super.key});
@@ -60,6 +60,14 @@ class SecurityDashboard extends StatelessWidget {
                 'Confirm key handover to lecturer', 
                 Icons.vpn_key_outlined,
                 const SecurityCheckInScreen()
+              ),
+              const SizedBox(height: 16),
+              _buildActionCard(
+                context, 
+                'Schedule History', 
+                'View past lab sessions and times', 
+                Icons.history,
+                const ScheduleHistoryScreen(role: 'security')
               ),
             ],
           ),

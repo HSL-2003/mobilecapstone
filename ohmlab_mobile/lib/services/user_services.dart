@@ -241,7 +241,14 @@ class UserService {
   }
 
   Future<ApiResponse> getMyGrades() async {
-    final response = await _apiService.defaultDio.get('/api/gradedescription/mygrade');
+    final response = await _apiService.defaultDio.get(
+      '/api/gradedescription/mygrade',
+      options: Options(
+        headers: {
+          'accept': '*/*',
+        },
+      ),
+    );
     return ApiResponse.fromResponse(response);
   }
 

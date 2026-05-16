@@ -120,12 +120,12 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
           MaterialPageRoute(
             builder: (context) => LecturerSessionManagementScreen(
               teamData: {
+                ...team,
                 "id": rawId,
                 "teamId": rawId,
                 "teamName": teamName,
                 "className": widget.classData['className'],
                 "registraionScheduleId": widget.classData['registraionScheduleId'],
-                ...team,
               },
             ),
           ),
