@@ -95,10 +95,10 @@ class _MyClassesScheduleScreenState extends State<MyClassesScheduleScreen> {
         }
       }
 
-      // Filter: Hiển thị tất cả trừ các lịch có trạng thái là Pending
+      // Filter: Loại bỏ lịch có trạng thái Pending và Rejected
       _schedules = rawSchedules.where((s) {
         final status = (s['registraionScheduleStatus'] ?? s['registrationScheduleStatus'] ?? s['status'] ?? '').toString().toLowerCase();
-        return status != 'pending';
+        return status != 'pending' && status != 'reject';
       }).toList();
 
       if (mounted) setState(() => _isLoading = false);
