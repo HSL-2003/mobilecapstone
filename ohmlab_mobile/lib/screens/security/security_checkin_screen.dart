@@ -371,16 +371,16 @@ class _SecurityCheckInScreenState extends State<SecurityCheckInScreen> {
                 ],
               ),
             ),
-            if (canCheckIn) ...[
+            if (canCheckIn && !isOverdue) ...[
               const SizedBox(height: 14),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () => _doCheckIn(s),
                   icon: const Icon(Icons.vpn_key_rounded, size: 18),
-                  label: Text(
-                    isOverdue ? 'Make-up Check-in · Hand Over Key' : 'Check-in · Hand Over Key',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  label: const Text(
+                    'Check-in · Hand Over Key',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: accentColor,
@@ -391,6 +391,17 @@ class _SecurityCheckInScreenState extends State<SecurityCheckInScreen> {
                     shadowColor: accentColor.withOpacity(0.4),
                   ),
                 ),
+              ),
+            ] else if (canCheckIn && isOverdue) ...[
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.block, size: 16, color: Colors.grey[400]),
+                  const SizedBox(width: 6),
+                  Text('Check-in expired — session has passed',
+                    style: TextStyle(color: Colors.grey[400], fontSize: 13, fontWeight: FontWeight.w500)),
+                ],
               ),
             ] else ...[
               const SizedBox(height: 12),
