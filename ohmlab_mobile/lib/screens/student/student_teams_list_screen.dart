@@ -174,8 +174,6 @@ class _StudentTeamsListScreenState extends State<StudentTeamsListScreen> {
                         teamName,
                         style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF1E1E1E), letterSpacing: -0.5),
                       ),
-                      const SizedBox(height: 6),
-                      Text(details, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14, color: Colors.grey)),
                     ],
                   ),
                 ),

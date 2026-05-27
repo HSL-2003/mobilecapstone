@@ -1,4 +1,4 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:ohm_lab_mobile/services/report_services.dart';
 import 'package:flutter/services.dart';
@@ -44,7 +44,7 @@ class _CommonReportHistoryScreenState extends State<CommonReportHistoryScreen> {
         if (mounted) {
           setState(() {
             _isLoading = false;
-            _error = res.message ?? "Lỗi tải lịch sử báo cáo.";
+            _error = res.message ?? 'Error loading report history.';
           });
         }
       }
@@ -69,7 +69,7 @@ class _CommonReportHistoryScreenState extends State<CommonReportHistoryScreen> {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: AppBar(
-              title: const Text('Lịch sử báo cáo', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: -0.5, fontSize: 24, color: Colors.white)),
+              title: const Text('Report History', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: -0.5, fontSize: 24, color: Colors.white)),
               backgroundColor: const Color(0xFFF26F21).withOpacity(0.95), // Orange tint
               elevation: 0,
               iconTheme: const IconThemeData(color: Colors.white),
@@ -113,7 +113,7 @@ class _CommonReportHistoryScreenState extends State<CommonReportHistoryScreen> {
     }
 
     if (_reportHistory.isEmpty) {
-      return const Center(child: Text("Chưa có bất kỳ báo cáo nào.", style: TextStyle(color: Colors.grey)));
+      return const Center(child: Text('No reports submitted yet.', style: TextStyle(color: Colors.grey)));
     }
 
     return ListView.builder(
@@ -125,12 +125,12 @@ class _CommonReportHistoryScreenState extends State<CommonReportHistoryScreen> {
                 final String idStr = report['reportId']?.toString() ?? report['id']?.toString() ?? 'N/A';
                 final String dateStr = report['reportCreateDate']?.toString() ?? report['createdDate']?.toString() ?? 'Unknown Date';
                 final String schedStr = report['registrationScheduleName']?.toString() ?? report['className']?.toString() ?? 'N/A';
-                final String titleStr = report['reportTitle']?.toString() ?? report['categoryName']?.toString() ?? 'Sự cố thiết bị';
+                final String titleStr = report['reportTitle']?.toString() ?? report['categoryName']?.toString() ?? 'Equipment Issue';
                 final String equipStr = report['equipmentName']?.toString() ?? report['equipmentId']?.toString() ?? '';
                 final String statusStr = report['reportStatus']?.toString() ?? report['status']?.toString() ?? 'Pending';
                 
                 Color statusColor = Colors.orange;
-                if (statusStr.toLowerCase().contains('done') || statusStr.toLowerCase().contains('xử lý')) {
+                if (statusStr.toLowerCase().contains('done') || statusStr.toLowerCase().contains('processed')) {
                   statusColor = Colors.green;
                 } else if (statusStr.toLowerCase().contains('reject')) {
                   statusColor = Colors.red;
@@ -178,11 +178,11 @@ class _CommonReportHistoryScreenState extends State<CommonReportHistoryScreen> {
                       const SizedBox(height: 16),
                       const Divider(height: 1, color: Color(0xFFEEEEEE)),
                       const SizedBox(height: 16),
-                      _buildInfoRow(Icons.calendar_today_outlined, 'Ngày gửi', dateStr),
+                      _buildInfoRow(Icons.calendar_today_outlined, 'Date Submitted', dateStr),
                       const SizedBox(height: 12),
-                      _buildInfoRow(Icons.class_outlined, 'Lịch Lab', schedStr),
+                      _buildInfoRow(Icons.class_outlined, 'Lab Schedule', schedStr),
                       const SizedBox(height: 12),
-                      _buildInfoRow(Icons.warning_amber_rounded, 'Sự cố', titleStr),
+                      _buildInfoRow(Icons.warning_amber_rounded, 'Issue', titleStr),
                       if (equipStr.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         _buildInfoRow(Icons.qr_code_scanner, 'Equipment', equipStr),

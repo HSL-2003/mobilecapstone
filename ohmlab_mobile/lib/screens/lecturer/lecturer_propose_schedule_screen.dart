@@ -1,4 +1,4 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:ohm_lab_mobile/services/user_services.dart';
@@ -226,7 +226,7 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
                   _fetchSchedules();
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF26F21)),
-                child: const Text('Xem tất cả lịch', style: TextStyle(color: Colors.white)),
+                child: const Text('See All Schedules', style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
@@ -247,7 +247,7 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
 
         // Title: BE có thể null → dùng fallback
         final String title = schedule['registrationScheduleName']?.toString()
-            ?? 'Lịch Đăng Ký #${index + 1}';
+            ?? 'Schedule #${index + 1}';
 
         // Parse date gracefully — BE trả '0001-01-01T00:00:00' khi chưa mapping
         String formattedDate = 'Unknown';
@@ -357,7 +357,7 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
                 Row(
                   children: [
                     if (roomName.isNotEmpty)
-                      Expanded(child: _buildInfoChip(Icons.meeting_room_outlined, 'Phòng', roomName, const Color(0xFFF26F21))),
+                       Expanded(child: _buildInfoChip(Icons.meeting_room_outlined, 'Room', roomName, const Color(0xFFF26F21))),
                     if (roomName.isNotEmpty && slotName.isNotEmpty) const SizedBox(width: 10),
                     if (slotName.isNotEmpty)
                       Expanded(child: _buildInfoChip(Icons.access_time_outlined, 'Slot', slotName, const Color(0xFF795548))),
@@ -390,16 +390,16 @@ class _LecturerProposeScheduleScreenState extends State<LecturerProposeScheduleS
               ],
 
               // ── Ngày ──
-              _buildInfoRow(Icons.calendar_today_outlined, 'Ngày', formattedDate),
+              _buildInfoRow(Icons.calendar_today_outlined, 'Date', formattedDate),
 
               // ── Mô tả / Ghi chú ──
               if (desc.isNotEmpty) ...[
                 const SizedBox(height: 10),
-                _buildInfoRow(Icons.description_outlined, 'Mô tả', desc),
+                _buildInfoRow(Icons.description_outlined, 'Description', desc),
               ],
               if (note.isNotEmpty) ...[
                 const SizedBox(height: 10),
-                _buildInfoRow(Icons.note_outlined, 'Ghi chú', note),
+                _buildInfoRow(Icons.note_outlined, 'Note', note),
               ],
             ],
           ),
@@ -584,7 +584,7 @@ class _CreateScheduleFormState extends State<_CreateScheduleForm> {
           children: [
             const Text('Create new registration schedule', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF1E1E1E))),
             const SizedBox(height: 24),
-            _buildField('Tên lịch đăng ký *', _nameController),
+            _buildField('Schedule Name *', _nameController),
             Row(
               children: [
                 Expanded(child: _buildField('Class ID *', _classIdController, isNumber: true)),
@@ -619,7 +619,7 @@ class _CreateScheduleFormState extends State<_CreateScheduleForm> {
                     Expanded(
                       child: Text(
                         _selectedDate == null 
-                          ? 'Chọn ngày *' 
+                          ? 'Select date *'
                           : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
                         style: TextStyle(color: _selectedDate == null ? Colors.grey[600] : Colors.black, fontSize: 16),
                       ),
@@ -629,7 +629,7 @@ class _CreateScheduleFormState extends State<_CreateScheduleForm> {
               ),
             ),
 
-            _buildField('Mô tả', _descController, maxLines: 3),
+            _buildField('Description', _descController, maxLines: 3),
             
             const SizedBox(height: 16),
             SizedBox(
@@ -644,7 +644,7 @@ class _CreateScheduleFormState extends State<_CreateScheduleForm> {
                 ),
                 child: _isSaving 
                   ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('Lưu thông tin', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+                  : const Text('Save', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
               ),
             ),
           ],

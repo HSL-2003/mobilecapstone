@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:ohm_lab_mobile/services/user_services.dart';
 import 'package:ohm_lab_mobile/screens/student/student_teams_list_screen.dart';
-import '../common/common_report_incident_screen.dart';
 import '../common/my_classes_schedule_screen.dart';
 
 class StudentDashboard extends StatefulWidget {
@@ -110,8 +109,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
     return Column(
       children: [
         _buildActionCard(context, 'Schedule', Icons.today, const MyClassesScheduleScreen(role: 'student')),
-        const SizedBox(height: 16),
-        _buildActionCard(context, 'Report', Icons.report_problem, const CommonReportIncidentScreen()),
       ],
     );
   }

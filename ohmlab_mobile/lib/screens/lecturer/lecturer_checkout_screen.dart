@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'dart:ui';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -26,6 +26,7 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
   bool _isUploading = false;
   String? _errorMessage;
   List<dynamic> _schedules = [];
+  int _todayCount = 0; // number of today's schedules
   String? _lecturerId;
 
   @override
@@ -67,12 +68,32 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
               return dtB.compareTo(dtA);
             });
 
+            // Split: today vs overdue (past dates not checked out)
+            final today = DateTime.now();
+            final todayDate = DateTime(today.year, today.month, today.day);
+
+            List<dynamic> todayList = inProgress.where((s) {
+              final rawDate = s['registraionScheduleDate'] ?? s['registrationScheduleDate'] ?? s['date'] ?? '';
+              final dt = DateTime.tryParse(rawDate.toString());
+              if (dt == null) return false;
+              return DateTime(dt.year, dt.month, dt.day) == todayDate;
+            }).toList();
+
+            List<dynamic> overdueList = inProgress.where((s) {
+              final rawDate = s['registraionScheduleDate'] ?? s['registrationScheduleDate'] ?? s['date'] ?? '';
+              final dt = DateTime.tryParse(rawDate.toString());
+              if (dt == null) return false;
+              return DateTime(dt.year, dt.month, dt.day).isBefore(todayDate);
+            }).toList();
+
             setState(() {
-              _schedules = inProgress;
+              // index 0..n-1 = today, then overdue
+              _schedules = [...todayList, ...overdueList];
+              _todayCount = todayList.length;
               _isLoadingSchedules = false;
             });
           } else {
-            setState(() { _errorMessage = 'Lỗi tải lịch: ${res.message}'; _isLoadingSchedules = false; });
+            setState(() { _errorMessage = 'Error loading schedule: ${res.message}'; _isLoadingSchedules = false; });
           }
         }
       }
@@ -104,7 +125,7 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
       throw Exception('Cloudinary Error: ${e.response?.data['error']?['message'] ?? e.message}');
     } catch (e) {
       debugPrint('Cloudinary upload error: $e');
-      throw Exception('Lỗi upload ảnh: $e');
+       throw Exception('Image upload error: $e');
     }
     return null;
   }
@@ -113,7 +134,7 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
     final int? scheduleId = int.tryParse((schedule['registraionScheduleId'] ?? schedule['registrationScheduleId'] ?? schedule['id'] ?? '').toString());
     if (scheduleId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không tìm thấy ID lịch.'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('Schedule ID not found.'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -130,15 +151,15 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
             children: [
               Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
               const SizedBox(height: 20),
-              const Text('Chọn ảnh Check-out', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              const Text('Select Check-out Photo', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
               const SizedBox(height: 8),
-              const Text('Chụp ảnh trả phòng để xác nhận', style: TextStyle(color: Colors.grey)),
+              const Text('Take a photo to confirm room return', style: TextStyle(color: Colors.grey)),
               const SizedBox(height: 24),
               Row(
                 children: [
-                  Expanded(child: _buildPickerOption(icon: Icons.camera_alt, label: 'Chụp ảnh', color: const Color(0xFFF26F21), onTap: () => Navigator.pop(ctx, ImageSource.camera))),
+                  Expanded(child: _buildPickerOption(icon: Icons.camera_alt, label: 'Camera', color: const Color(0xFFF26F21), onTap: () => Navigator.pop(ctx, ImageSource.camera))),
                   const SizedBox(width: 16),
-                  Expanded(child: _buildPickerOption(icon: Icons.photo_library, label: 'Thư viện ảnh', color: Colors.blue, onTap: () => Navigator.pop(ctx, ImageSource.gallery))),
+                  Expanded(child: _buildPickerOption(icon: Icons.photo_library, label: 'Gallery', color: Colors.blue, onTap: () => Navigator.pop(ctx, ImageSource.gallery))),
                 ],
               ),
             ],
@@ -162,7 +183,7 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
         setState(() => _isUploading = false);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Upload ảnh thất bại. Kiểm tra lại Upload Preset trên Cloudinary.'), backgroundColor: Colors.red),
+            const SnackBar(content: Text('Image upload failed. Check Upload Preset on Cloudinary.'), backgroundColor: Colors.red),
           );
         }
         return;
@@ -176,7 +197,7 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('✅ Check-out thành công! Lịch đã chuyển sang Completed.'),
+              content: Text('Check-out successful! Schedule moved to Completed.'),
               backgroundColor: Colors.green,
               duration: Duration(seconds: 3),
             ),
@@ -186,7 +207,7 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Lỗi check-out: ${res.message ?? res.status}'), backgroundColor: Colors.red),
+            SnackBar(content: Text('Check-out error: ${res.message ?? res.status}'), backgroundColor: Colors.red),
           );
         }
       }
@@ -241,9 +262,9 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
                               children: [
                                 Icon(Icons.check_circle_outline, size: 80, color: Colors.grey[300]),
                                 const SizedBox(height: 16),
-                                const Text('Không có lịch nào đang InProgress.', style: TextStyle(color: Colors.grey, fontSize: 16)),
+                                 const Text('No schedules currently In Progress.', style: TextStyle(color: Colors.grey, fontSize: 16)),
                                 const SizedBox(height: 8),
-                                const Text('(Bảo vệ cần check-in trước)', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                                 const Text('(Security must check-in first)', style: TextStyle(color: Colors.grey, fontSize: 13)),
                               ],
                             ),
                           ))
@@ -253,38 +274,35 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (_schedules.isNotEmpty) _buildScheduleCard(_schedules.first),
-                            
-                            if (_schedules.length > 1) ...[
-                              const SizedBox(height: 24),
+                            // ── Today's Check-out ──
+                            if (_todayCount == 0)
                               Container(
-                                padding: const EdgeInsets.all(16),
+                                margin: const EdgeInsets.only(bottom: 16),
+                                padding: const EdgeInsets.all(20),
                                 decoration: BoxDecoration(
-                                  color: Colors.red.withOpacity(0.05),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: Colors.red.withOpacity(0.2)),
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5))],
                                 ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                child: Row(
                                   children: [
-                                    Row(
-                                      children: [
-                                        Icon(Icons.warning_amber_rounded, color: Colors.red[700], size: 24),
-                                        const SizedBox(width: 8),
-                                        Expanded(child: Text('Forgotten Checkouts', style: TextStyle(color: Colors.red[800], fontWeight: FontWeight.bold, fontSize: 16))),
-                                      ],
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
+                                      child: Icon(Icons.check_circle_outline, color: Colors.grey[400], size: 24),
                                     ),
-                                    const SizedBox(height: 8),
-                                    Text('These lab sessions were not checked out. Please report them to the Head of Department.', style: TextStyle(color: Colors.red[700], fontSize: 13)),
-                                    const SizedBox(height: 16),
-                                    ..._schedules.sublist(1).map((s) => Padding(
-                                      padding: const EdgeInsets.only(bottom: 12),
-                                      child: _buildForgottenScheduleCard(s),
-                                    )).toList(),
+                                    const SizedBox(width: 14),
+                                    const Expanded(
+                                      child: Text(
+                                        'No check-out schedule for today.',
+                                        style: TextStyle(color: Colors.grey, fontSize: 15, fontWeight: FontWeight.w500),
+                                      ),
+                                    ),
                                   ],
                                 ),
-                              ),
-                            ]
+                              )
+                            else
+                              ..._schedules.sublist(0, _todayCount).map((s) => _buildScheduleCard(s)),
                           ],
                         ),
                       ),
@@ -298,7 +316,7 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
                   children: [
                     CircularProgressIndicator(color: Colors.white),
                     SizedBox(height: 16),
-                    Text('Đang upload ảnh lên Cloudinary...', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                     Text('Uploading image to Cloudinary...', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -319,7 +337,7 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: AppBar(
-              title: const Text('Check-out phòng Lab',
+              title: const Text('Lab Check-out',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white)),
               backgroundColor: const Color(0xFFF26F21).withOpacity(0.95),
               elevation: 0,
@@ -337,7 +355,7 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
   }
 
   Widget _buildScheduleCard(Map<String, dynamic> s) {
-    final String roomName = s['roomName'] ?? s['room']?['roomName'] ?? 'Phòng N/A';
+    final String roomName = s['roomName'] ?? s['room']?['roomName'] ?? 'Room N/A';
     final String date = s['registraionScheduleDate'] ?? s['registrationScheduleDate'] ?? s['date'] ?? 'N/A';
     final String startTime = s['slotStartTime'] ?? s['startTime'] ?? '';
     final String endTime = s['slotEndTime'] ?? s['endTime'] ?? '';
@@ -429,9 +447,14 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
   }
 
   Widget _buildForgottenScheduleCard(Map<String, dynamic> s) {
-    final String roomName = s['roomName'] ?? s['room']?['roomName'] ?? 'Phòng N/A';
+    final String roomName = s['roomName'] ?? s['room']?['roomName'] ?? 'Room N/A';
     final String date = s['registraionScheduleDate'] ?? s['registrationScheduleDate'] ?? s['date'] ?? 'N/A';
     final String startTime = s['slotStartTime'] ?? s['startTime'] ?? '';
+    String displayDate = date.split('T')[0];
+    try {
+      final dt = DateTime.parse(date);
+      displayDate = '${dt.day.toString().padLeft(2,'0')}/${dt.month.toString().padLeft(2,'0')}/${dt.year}';
+    } catch (_) {}
 
     return Container(
       decoration: BoxDecoration(
@@ -446,16 +469,19 @@ class _LecturerCheckOutScreenState extends State<LecturerCheckOutScreen> {
           decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), shape: BoxShape.circle),
           child: const Icon(Icons.warning, color: Colors.red, size: 20),
         ),
-        title: Text('$roomName', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        subtitle: Text('Date: ${date.split('T')[0]} $startTime', style: TextStyle(color: Colors.grey[700], fontSize: 12)),
-        trailing: OutlinedButton(
-          onPressed: _isUploading ? null : () => _startCheckOut(s),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: Colors.red,
-            side: BorderSide(color: Colors.red.withOpacity(0.5)),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+        title: Text(roomName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        subtitle: Text('Date: $displayDate $startTime', style: TextStyle(color: Colors.grey[700], fontSize: 12)),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey[300]!),
           ),
-          child: const Text('Checkout Now', style: TextStyle(fontSize: 12)),
+          child: const Text(
+            'Not checked out',
+            style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w600),
+          ),
         ),
       ),
     );

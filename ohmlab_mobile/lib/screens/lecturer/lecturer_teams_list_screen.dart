@@ -163,8 +163,6 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
                     teamName,
                     style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF1E1E1E), letterSpacing: -0.5),
                   ),
-                  const SizedBox(height: 6),
-                  Text(details, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14, color: Colors.grey)),
                 ],
               ),
             ),
@@ -311,7 +309,7 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
                 itemCount: _teams.length,
                 itemBuilder: (context, idx) {
                   final team = _teams[idx];
-                  final String teamName = team['teamName'] ?? 'Nhóm ${idx + 1}';
+                  final String teamName = team['teamName'] ?? 'Team ${idx + 1}';
                   final teamId = team['teamId'] ?? team['id'];
 
                   return ListTile(
@@ -665,12 +663,6 @@ class _LecturerTeamsListScreenState extends State<LecturerTeamsListScreen> {
             _buildStudentList(),
             _buildTeamsTab(),
           ],
-        ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: _showCreateTeamDialog,
-          backgroundColor: const Color(0xFFF26F21),
-          icon: const Icon(Icons.add, color: Colors.white),
-          label: const Text('Create Team', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         ),
       ),
     );

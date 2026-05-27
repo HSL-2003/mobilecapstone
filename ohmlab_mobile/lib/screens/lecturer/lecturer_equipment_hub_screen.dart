@@ -138,7 +138,7 @@ class _GlobalEquipmentScannerState extends State<_GlobalEquipmentScanner> {
       final String? code = capture.barcodes.first.rawValue;
       if (code != null && mounted) _onQRScanned(context, code);
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kh�ng t�m th?y m� QR trong ?nh!'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('QR code not found in image!'), backgroundColor: Colors.red));
     }
   }
 
@@ -159,7 +159,7 @@ class _GlobalEquipmentScannerState extends State<_GlobalEquipmentScanner> {
 
     if (equipmentId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không đọc được mã QR!'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('Cannot read QR code!'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -194,14 +194,14 @@ class _GlobalEquipmentScannerState extends State<_GlobalEquipmentScanner> {
         } else {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Không tìm thấy thiết bị với ID: $equipmentId'), backgroundColor: Colors.red),
+              SnackBar(content: Text('Equipment not found with ID: $equipmentId'), backgroundColor: Colors.red),
             );
           }
         }
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(res.message ?? 'Không thể lấy thông tin thiết bị'), backgroundColor: Colors.red),
+            SnackBar(content: Text(res.message ?? 'Cannot get equipment information'), backgroundColor: Colors.red),
           );
         }
       }
@@ -209,7 +209,7 @@ class _GlobalEquipmentScannerState extends State<_GlobalEquipmentScanner> {
       if (context.mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Lỗi kết nối server'), backgroundColor: Colors.red),
+          const SnackBar(content: Text('Cannot connect to server'), backgroundColor: Colors.red),
         );
       }
     }
@@ -222,7 +222,7 @@ class _GlobalEquipmentScannerState extends State<_GlobalEquipmentScanner> {
       children: [
         const Text('Scan Equipment QR', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1E1E1E), letterSpacing: -0.5)),
         const SizedBox(height: 8),
-        const Text('Quét mã QR dán trên thiết bị để xem thông tin và phân bổ cho team.', style: TextStyle(color: Colors.black54, fontSize: 13, height: 1.5)),
+        const Text('Scan the QR code on the equipment to view details and assign to a team.', style: TextStyle(color: Colors.black54, fontSize: 13, height: 1.5)),
         const SizedBox(height: 16),
 
         // Camera QR Scanner Box
@@ -268,7 +268,7 @@ class _GlobalEquipmentScannerState extends State<_GlobalEquipmentScanner> {
                     decoration: BoxDecoration(color: Colors.black.withOpacity(0.5), borderRadius: BorderRadius.circular(12)),
                     child: IconButton(
                       icon: const Icon(Icons.center_focus_strong, color: Colors.white),
-                      tooltip: 'Gi? l?p Qu�t (Test)',
+                      tooltip: 'Simulate Scan (Test)',
                       onPressed: _simulateScan,
                     ),
                   ),
@@ -276,7 +276,7 @@ class _GlobalEquipmentScannerState extends State<_GlobalEquipmentScanner> {
                 const Positioned(
                   bottom: 12, left: 0, right: 0,
                   child: Center(
-                    child: Text('Đưa mã QR vào khung để quét', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                    child: Text('Place QR code inside the frame to scan', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
                   ),
                 ),
               ],
@@ -350,7 +350,7 @@ class _GlobalEquipmentScannerState extends State<_GlobalEquipmentScanner> {
                           const SizedBox(height: 6),
                           IconButton(
                             icon: const Icon(Icons.handshake_outlined, color: Color(0xFFF26F21)),
-                            tooltip: 'Mượn cho Team',
+                             tooltip: 'Assign to Team',
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
                             onPressed: () {
@@ -358,7 +358,7 @@ class _GlobalEquipmentScannerState extends State<_GlobalEquipmentScanner> {
                               if (rawId.isNotEmpty) {
                                 _showBorrowBottomSheet(context, rawId, equipName);
                               } else {
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thiết bị không hợp lệ (Mất ID).')));
+                                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid equipment (missing ID).')));
                               }
                             },
                           ),
@@ -549,10 +549,12 @@ class _BorrowEquipmentFormState extends State<_BorrowEquipmentForm> {
   final MobileScannerController _scannerController = MobileScannerController();
   final ImagePicker _imagePicker = ImagePicker();
   
-  final _teamIdController = TextEditingController();
   final _nameController = TextEditingController();
   final _descController = TextEditingController();
   
+  List<dynamic> _teamsList = [];
+  bool _isLoadingTeams = true;
+  String? _selectedTeamId;
   bool _isSaving = false;
 
   @override
@@ -565,21 +567,63 @@ class _BorrowEquipmentFormState extends State<_BorrowEquipmentForm> {
   void initState() {
     super.initState();
     // Default the name field
-    _nameController.text = 'Mượn ' + widget.equipmentName;
+    _nameController.text = 'Borrow ' + widget.equipmentName;
+    _fetchLecturerTeams();
+  }
+
+  Future<void> _fetchLecturerTeams() async {
+    try {
+      final userResponse = await _userService.getCurrentUser();
+      if (userResponse.status == 200 || userResponse.status == 201) {
+        final payload = userResponse.data;
+        dynamic userData = (payload is Map && payload.containsKey('data') && payload['data'] != null)
+            ? payload['data']
+            : payload;
+        
+        // Prioritize lecturerId UUID over the general user account id
+        final String? lecturerId = userData['lecturerId']?.toString() ?? userData['id']?.toString() ?? userData['userId']?.toString();
+        
+        if (lecturerId != null) {
+          final teamsRes = await _userService.getLecturerTeams(lecturerId);
+          if (teamsRes.status == 200 || teamsRes.status == 201) {
+            final tPayload = teamsRes.data;
+            List<dynamic> loadedTeams = [];
+            if (tPayload is Map && tPayload.containsKey('data')) {
+              loadedTeams = tPayload['data'] is List ? tPayload['data'] : [];
+            } else if (tPayload is List) {
+              loadedTeams = tPayload;
+            }
+            if (mounted) {
+              setState(() {
+                _teamsList = loadedTeams;
+                _isLoadingTeams = false;
+              });
+            }
+            return;
+          }
+        }
+      }
+      if (mounted) {
+        setState(() => _isLoadingTeams = false);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoadingTeams = false);
+      }
+    }
   }
 
   Future<void> _submit() async {
-    final teamIdText = _teamIdController.text.trim();
     final nameText = _nameController.text.trim();
     
-    if (teamIdText.isEmpty || nameText.isEmpty) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng nhập Team ID và Tên thiết bị!')));
+    if (_selectedTeamId == null || nameText.isEmpty) {
+       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a Team and enter Equipment Name!')));
       return;
     }
 
-    final int? tId = int.tryParse(teamIdText);
+    final int? tId = int.tryParse(_selectedTeamId!);
     if (tId == null) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Team ID phải là số hợp lệ!')));
+       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid Team selected!')));
       return;
     }
 
@@ -600,11 +644,11 @@ class _BorrowEquipmentFormState extends State<_BorrowEquipmentForm> {
       if (res.status == 200 || res.status == 201) {
         if (mounted) {
           Navigator.pop(context); // Close bottom sheet
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Phân bổ thiết bị cho Team thành công!', style: TextStyle(color: Colors.white)), backgroundColor: Colors.green));
+           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Equipment assigned to Team successfully!', style: TextStyle(color: Colors.white)), backgroundColor: Colors.green));
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${res.message ?? "Không thể mượn thiết bị."}'), backgroundColor: Colors.red));
+           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${res.message ?? "Cannot assign equipment."}'), backgroundColor: Colors.red));
         }
       }
     } catch (e) {
@@ -651,11 +695,54 @@ class _BorrowEquipmentFormState extends State<_BorrowEquipmentForm> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Phân bổ thiết bị: ${widget.equipmentName}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1E1E1E))),
+            Text('Assign Equipment: ${widget.equipmentName}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1E1E1E))),
             const SizedBox(height: 24),
-            _buildField('Tên Thiết Bị (Cho Team) *', _nameController),
-            _buildField('Team ID *', _teamIdController, isNumber: true),
-            _buildField('Mô tả thêm', _descController, maxLines: 2),
+            _buildField('Equipment Name (For Team) *', _nameController),
+            
+            if (_isLoadingTeams)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 16),
+                child: Center(child: CircularProgressIndicator(color: Color(0xFFF26F21))),
+              )
+            else if (_teamsList.isEmpty)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 16),
+                child: Text('No teams found. Please create a team first.', style: TextStyle(color: Colors.red)),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: DropdownButtonFormField<String>(
+                  value: _selectedTeamId,
+                  hint: const Text('Select Team *'),
+                  decoration: InputDecoration(
+                    labelText: 'Team *',
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE))),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFF26F21))),
+                  ),
+                  items: _teamsList.map((t) {
+                    final String tId = (t['teamId'] ?? t['id'] ?? '').toString();
+                    final String tName = t['teamName'] ?? t['name'] ?? 'Unknown Team';
+                    final String className = t['className'] ?? '';
+                    final String displayStr = className.isNotEmpty ? '$tName ($className)' : tName;
+                    return DropdownMenuItem<String>(
+                      value: tId,
+                      child: Text(displayStr),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    setState(() {
+                      _selectedTeamId = val;
+                    });
+                  },
+                ),
+              ),
+
+            _buildField('Additional Notes', _descController, maxLines: 2),
             
             const SizedBox(height: 16),
             SizedBox(
@@ -670,7 +757,7 @@ class _BorrowEquipmentFormState extends State<_BorrowEquipmentForm> {
                 ),
                 child: _isSaving 
                   ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('Phân bổ thiết bị', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+                  : const Text('Assign Equipment', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
               ),
             ),
           ],

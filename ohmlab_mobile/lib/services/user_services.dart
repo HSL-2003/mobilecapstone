@@ -351,6 +351,13 @@ class UserService {
     return ApiResponse.fromResponse(response);
   }
 
+  Future<ApiResponse> securityUpdateStatusRoom(int registrationScheduleId) async {
+    final response = await _apiService.defaultDio.post(
+      '/api/security/updatastatusroom/$registrationScheduleId',
+    );
+    return ApiResponse.fromResponse(response);
+  }
+
   Future<ApiResponse> lecturerCheckOut(int registrationScheduleId, String imageUrl) async {
     final response = await _apiService.defaultDio.post(
       '/api/registrationschedule/lecturercheckout',

@@ -145,11 +145,11 @@ class _GlobalKitScannerState extends State<_GlobalKitScanner> {
         final kit = (data is Map && data.containsKey('data')) ? data['data'] : data;
         if (mounted) _showKitDetailDialog(context, kit);
       } else {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res.message ?? 'Không tìm thấy thông tin Kit.'), backgroundColor: Colors.red));
+         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res.message ?? 'Kit information not found.'), backgroundColor: Colors.red));
       }
     } catch (e) {
       Navigator.pop(context);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lỗi kết nối API Kit.'), backgroundColor: Colors.red));
+       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('API connection error for Kit.'), backgroundColor: Colors.red));
     }
   }
 
@@ -162,7 +162,7 @@ class _GlobalKitScannerState extends State<_GlobalKitScanner> {
       final String? code = capture.barcodes.first.rawValue;
       if (code != null && mounted) _onQRScanned(context, code);
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Không tìm thấy mã QR trong ảnh!'), backgroundColor: Colors.red));
+       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('QR code not found in image!'), backgroundColor: Colors.red));
     }
   }
 
@@ -343,7 +343,7 @@ class _GlobalKitScannerState extends State<_GlobalKitScanner> {
                   decoration: BoxDecoration(color: Colors.black.withOpacity(0.5), borderRadius: BorderRadius.circular(12)),
                   child: IconButton(
                     icon: const Icon(Icons.photo_library, color: Colors.white),
-                    tooltip: 'Tải ảnh QR từ thư viện',
+                     tooltip: 'Upload QR image from gallery',
                     onPressed: _pickAndScanImage,
                   ),
                 ),
@@ -354,7 +354,7 @@ class _GlobalKitScannerState extends State<_GlobalKitScanner> {
                   decoration: BoxDecoration(color: Colors.black.withOpacity(0.5), borderRadius: BorderRadius.circular(12)),
                   child: IconButton(
                     icon: const Icon(Icons.center_focus_strong, color: Colors.white),
-                    tooltip: 'Giả lập Quét (Test)',
+                      tooltip: 'Simulate Scan (Test)',
                     onPressed: _simulateScan,
                   ),
                 ),
@@ -362,7 +362,7 @@ class _GlobalKitScannerState extends State<_GlobalKitScanner> {
               const Positioned(
                 bottom: 12, left: 0, right: 0,
                 child: Center(
-                  child: Text('Đưa mã QR vào khung hoặc tải ảnh lên', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                   child: Text('Place QR code inside the frame to scan', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
                 ),
               ),
             ],
@@ -374,7 +374,7 @@ class _GlobalKitScannerState extends State<_GlobalKitScanner> {
         if (_isLoadingKits)
           const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(color: Color(0xFFF26F21))))
         else if (_kits.isEmpty)
-           const Center(child: Padding(padding: EdgeInsets.all(20), child: Text('Không có dữ liệu Kit cấp phát.', style: TextStyle(color: Colors.grey))))
+           const Center(child: Padding(padding: EdgeInsets.all(20), child: Text('No kit data available.', style: TextStyle(color: Colors.grey))))
         else
            ..._kits.map((kit) {
               final name = kit['kitName'] ?? kit['name'] ?? kit['kitCode'] ?? 'Unknown Kit';
@@ -417,12 +417,12 @@ class _GlobalKitScannerState extends State<_GlobalKitScanner> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.handshake_outlined, color: Color(0xFFF26F21)),
-                        tooltip: 'Mượn cho Team',
+                         tooltip: 'Assign to Team',
                         onPressed: () {
                           if (kitId.isNotEmpty) {
                             _showBorrowBottomSheet(context, kitId, name);
                           } else {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kit không hợp lệ (Mất ID).')));
+                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid kit (missing ID).')));
                           }
                         },
                       ),
@@ -484,30 +484,74 @@ class _BorrowKitForm extends StatefulWidget {
 class _BorrowKitFormState extends State<_BorrowKitForm> {
   final UserService _userService = UserService();
   
-  final _teamIdController = TextEditingController();
   final _nameController = TextEditingController();
   final _descController = TextEditingController();
   
+  List<dynamic> _teamsList = [];
+  bool _isLoadingTeams = true;
+  String? _selectedTeamId;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _nameController.text = 'Mượn ' + widget.kitName;
+    _nameController.text = 'Borrow ' + widget.kitName;
+    _fetchLecturerTeams();
+  }
+
+  Future<void> _fetchLecturerTeams() async {
+    try {
+      final userResponse = await _userService.getCurrentUser();
+      if (userResponse.status == 200 || userResponse.status == 201) {
+        final payload = userResponse.data;
+        dynamic userData = (payload is Map && payload.containsKey('data') && payload['data'] != null)
+            ? payload['data']
+            : payload;
+        
+        // Prioritize lecturerId UUID over the general user account id
+        final String? lecturerId = userData['lecturerId']?.toString() ?? userData['id']?.toString() ?? userData['userId']?.toString();
+        
+        if (lecturerId != null) {
+          final teamsRes = await _userService.getLecturerTeams(lecturerId);
+          if (teamsRes.status == 200 || teamsRes.status == 201) {
+            final tPayload = teamsRes.data;
+            List<dynamic> loadedTeams = [];
+            if (tPayload is Map && tPayload.containsKey('data')) {
+              loadedTeams = tPayload['data'] is List ? tPayload['data'] : [];
+            } else if (tPayload is List) {
+              loadedTeams = tPayload;
+            }
+            if (mounted) {
+              setState(() {
+                _teamsList = loadedTeams;
+                _isLoadingTeams = false;
+              });
+            }
+            return;
+          }
+        }
+      }
+      if (mounted) {
+        setState(() => _isLoadingTeams = false);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoadingTeams = false);
+      }
+    }
   }
 
   Future<void> _submit() async {
-    final teamIdText = _teamIdController.text.trim();
     final nameText = _nameController.text.trim();
     
-    if (teamIdText.isEmpty || nameText.isEmpty) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng nhập Team ID và Tên Kit!')));
+    if (_selectedTeamId == null || nameText.isEmpty) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a Team and enter Kit Name!')));
       return;
     }
 
-    final int? tId = int.tryParse(teamIdText);
+    final int? tId = int.tryParse(_selectedTeamId!);
     if (tId == null) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Team ID phải là số hợp lệ!')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid Team selected!')));
       return;
     }
 
@@ -528,11 +572,11 @@ class _BorrowKitFormState extends State<_BorrowKitForm> {
       if (res.status == 200 || res.status == 201) {
         if (mounted) {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Phân bổ Kit cho Team thành công!', style: TextStyle(color: Colors.white)), backgroundColor: Colors.green));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kit assigned to Team successfully!', style: TextStyle(color: Colors.white)), backgroundColor: Colors.green));
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${res.message ?? "Không thể mượn Kit."}'), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${res.message ?? "Cannot assign Kit."}'), backgroundColor: Colors.red));
         }
       }
     } catch (e) {
@@ -579,11 +623,54 @@ class _BorrowKitFormState extends State<_BorrowKitForm> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Phân bổ Kit: ${widget.kitName}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1E1E1E))),
+            Text('Assign Kit: ${widget.kitName}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1E1E1E))),
             const SizedBox(height: 24),
-            _buildField('Tên Kit (Cho Team) *', _nameController),
-            _buildField('Team ID *', _teamIdController, isNumber: true),
-            _buildField('Mô tả thêm', _descController, maxLines: 2),
+            _buildField('Kit Name (For Team) *', _nameController),
+            
+            if (_isLoadingTeams)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 16),
+                child: Center(child: CircularProgressIndicator(color: Color(0xFFF26F21))),
+              )
+            else if (_teamsList.isEmpty)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 16),
+                child: Text('No teams found. Please create a team first.', style: TextStyle(color: Colors.red)),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: DropdownButtonFormField<String>(
+                  value: _selectedTeamId,
+                  hint: const Text('Select Team *'),
+                  decoration: InputDecoration(
+                    labelText: 'Team *',
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE))),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFEEEEEE))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFF26F21))),
+                  ),
+                  items: _teamsList.map((t) {
+                    final String tId = (t['teamId'] ?? t['id'] ?? '').toString();
+                    final String tName = t['teamName'] ?? t['name'] ?? 'Unknown Team';
+                    final String className = t['className'] ?? '';
+                    final String displayStr = className.isNotEmpty ? '$tName ($className)' : tName;
+                    return DropdownMenuItem<String>(
+                      value: tId,
+                      child: Text(displayStr),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    setState(() {
+                      _selectedTeamId = val;
+                    });
+                  },
+                ),
+              ),
+
+            _buildField('Additional Notes', _descController, maxLines: 2),
             
             const SizedBox(height: 16),
             SizedBox(
@@ -598,7 +685,7 @@ class _BorrowKitFormState extends State<_BorrowKitForm> {
                 ),
                 child: _isSaving 
                   ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('Phân bổ Kit', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+                  : const Text('Assign Kit', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
               ),
             ),
           ],

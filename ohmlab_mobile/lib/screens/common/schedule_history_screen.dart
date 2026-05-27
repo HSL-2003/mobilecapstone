@@ -78,9 +78,12 @@ class _ScheduleHistoryScreenState extends State<ScheduleHistoryScreen> {
           return dateB.compareTo(dateA);
         });
 
-        // Filter: Loại bỏ các lịch có trạng thái là Pending
+        // Filter: For security, only display completed and inprogress. For others, exclude pending.
         _historySchedules = all.where((s) {
           final status = (s['registraionScheduleStatus'] ?? s['registrationScheduleStatus'] ?? s['status'] ?? '').toString().toLowerCase();
+          if (widget.role == 'security') {
+            return status == 'completed' || status == 'inprogress';
+          }
           return status != 'pending';
         }).toList();
         setState(() => _isLoading = false);

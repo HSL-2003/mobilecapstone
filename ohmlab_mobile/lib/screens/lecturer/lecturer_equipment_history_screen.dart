@@ -55,7 +55,7 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
           } else {
             if (mounted) {
               setState(() {
-                _errorMessage = 'Không thể tải lịch sử thiết bị.';
+                _errorMessage = 'Cannot load equipment history.';
                 _isLoading = false;
               });
             }
@@ -63,7 +63,7 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
         } else {
           if (mounted) {
             setState(() {
-              _errorMessage = 'Information not found giảng viên.';
+              _errorMessage = 'Lecturer information not found.';
               _isLoading = false;
             });
           }
@@ -72,7 +72,7 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
         if (mounted) {
           setState(() {
             _isLoading = false;
-            _errorMessage = 'Lỗi xác thực người dùng.';
+            _errorMessage = 'Authentication error.';
           });
         }
       }
@@ -91,14 +91,14 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
     try {
       final res = await _userService.giveBackEquipment(teamEquipmentId);
       if (res.status == 200 || res.status == 201) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thu hồi thiết bị thành công!'), backgroundColor: Colors.green));
+         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Equipment returned successfully!'), backgroundColor: Colors.green));
         _fetchHistory();
       } else {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${res.message}'), backgroundColor: Colors.red));
         setState(() => _isLoading = false);
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lỗi kết nối khi thu hồi thiết bị.'), backgroundColor: Colors.red));
+       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Network error while returning equipment.'), backgroundColor: Colors.red));
       setState(() => _isLoading = false);
     }
   }
@@ -128,7 +128,7 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
         : _errorMessage != null
           ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(_errorMessage!, style: const TextStyle(color: Colors.red))))
           : _equipmentHistory.isEmpty
-            ? const Center(child: Text("Team chưa có lịch sử mượn trả thiết bị.", style: TextStyle(color: Colors.grey)))
+            ? const Center(child: Text("Team has no equipment borrow/return history.", style: TextStyle(color: Colors.grey)))
             : ListView.builder(
                 padding: EdgeInsets.only(top: widget.hideAppBar ? 24 : 100, left: 24, right: 24, bottom: 24),
                 itemCount: _equipmentHistory.length,
@@ -227,7 +227,7 @@ class _LecturerEquipmentHistoryScreenState extends State<LecturerEquipmentHistor
                                   OutlinedButton.icon(
                                     onPressed: () => _giveBack(teamEquipmentId),
                                     icon: const Icon(Icons.assignment_return, size: 16),
-                                    label: const Text('Thu hồi đồ'),
+                                    label: const Text('Give Back'),
                                     style: OutlinedButton.styleFrom(
                                       foregroundColor: const Color(0xFFF26F21),
                                       side: const BorderSide(color: Color(0xFFF26F21)),
@@ -318,10 +318,10 @@ class _EquipmentDetailModalState extends State<_EquipmentDetailModal> {
           });
         }
       } else {
-        if (mounted) setState(() { _error = 'Lỗi tải chi tiết: ${res.message}'; _isLoading = false; });
+         if (mounted) setState(() { _error = 'Error: ${res.message}'; _isLoading = false; });
       }
     } catch(e) {
-      if (mounted) setState(() { _error = 'Lỗi mạng khi tải chi tiết.'; _isLoading = false; });
+       if (mounted) setState(() { _error = 'Network error.'; _isLoading = false; });
     }
   }
 
@@ -338,7 +338,7 @@ class _EquipmentDetailModalState extends State<_EquipmentDetailModal> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Chi Tiết Phân Bổ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF1E1E1E))),
+            const Text('Assignment Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF1E1E1E))),
             const SizedBox(height: 24),
             if (_isLoading)
               const Center(child: CircularProgressIndicator(color: Color(0xFFF26F21)))
@@ -350,22 +350,22 @@ class _EquipmentDetailModalState extends State<_EquipmentDetailModal> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Status: ${_data!['teamEquipmentStatus'] ?? "N/A"}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
-                    Text('ID Lớp: ${_data!['classId']}', style: const TextStyle(color: Colors.grey)),
+                    Text('Class ID: ${_data!['classId']}', style: const TextStyle(color: Colors.grey)),
                   ],
                 ),
                 const SizedBox(height: 16),
                 const Divider(),
                 const SizedBox(height: 16),
-                _buildRow('Tên thiết bị:', _data!['equipmentName']),
-                _buildRow('Mã thiết bị:', _data!['equipmentCode']),
+                _buildRow('Equipment Name:', _data!['equipmentName']),
+                _buildRow('Equipment Code:', _data!['equipmentCode']),
                 _buildRow('Serial:', _data!['equipmentNumberSerial']),
-                _buildRow('Tên cho Nhóm:', _data!['teamEquipmentName']),
-                _buildRow('Lớp học:', _data!['className']),
-                _buildRow('Nhóm:', _data!['teamName']),
+                _buildRow('Team Name:', _data!['teamEquipmentName']),
+                _buildRow('Class:', _data!['className']),
+                _buildRow('Team:', _data!['teamName']),
                 const Divider(),
-                _buildRow('Giờ mượn:', _data!['teamEquipmentDateBorrow']?.toString() ?? 'N/A'),
-                _buildRow('Giờ trả:', _data!['teamEquipmentDateGiveBack']?.toString() ?? 'Not Returned'),
-                _buildRow('Mô tả:', _data!['teamEquipmentDescription']),
+                _buildRow('Borrow Time:', _data!['teamEquipmentDateBorrow']?.toString() ?? 'N/A'),
+                _buildRow('Give Back Time:', _data!['teamEquipmentDateGiveBack']?.toString() ?? 'Not Returned'),
+                _buildRow('Description:', _data!['teamEquipmentDescription']),
               ],
             const SizedBox(height: 24),
             SizedBox(
@@ -394,7 +394,7 @@ class _EquipmentDetailModalState extends State<_EquipmentDetailModal> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(width: 100, child: Text(label, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500))),
-          Expanded(child: Text(value?.toString() ?? 'Trống', style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E1E1E)))),
+           Expanded(child: Text(value?.toString() ?? 'N/A', style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E1E1E)))),
         ],
       ),
     );

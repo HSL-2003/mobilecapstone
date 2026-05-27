@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:ohm_lab_mobile/services/report_services.dart';
 
 class DailyScheduleScreen extends StatefulWidget {
@@ -146,7 +146,7 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Ngày $_todayDate', style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 1.0)),
+          Text('Date: ', style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 1.0)),
           const SizedBox(height: 8),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -275,7 +275,7 @@ class _SlotClassesBottomSheetState extends State<_SlotClassesBottomSheet> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Các lớp trong ${widget.slotName}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                Text('Classes in ', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 IconButton(
                   icon: const Icon(Icons.close),
                   onPressed: () => Navigator.pop(context),
@@ -291,7 +291,7 @@ class _SlotClassesBottomSheetState extends State<_SlotClassesBottomSheet> {
                 : _errorMessage != null
                     ? Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)))
                     : _classes.isEmpty
-                        ? Center(child: Text('Không có lớp nào trong ${widget.slotName}.', style: TextStyle(color: Colors.grey[500])))
+                        ? Center(child: Text('No classes scheduled in .', style: TextStyle(color: Colors.grey[500])))
                         : ListView.separated(
                             padding: const EdgeInsets.all(24),
                             itemCount: _classes.length,

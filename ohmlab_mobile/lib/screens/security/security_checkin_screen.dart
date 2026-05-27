@@ -169,6 +169,82 @@ class _SecurityCheckInScreenState extends State<SecurityCheckInScreen> {
     }
   }
 
+  Future<void> _doUpdateRoomStatus(Map<String, dynamic> schedule) async {
+    final int? scheduleId = int.tryParse(
+      (schedule['registraionScheduleId'] ?? schedule['registrationScheduleId'] ?? schedule['id'] ?? '').toString()
+    );
+    final String roomName = schedule['roomName'] ?? 'N/A';
+
+    if (scheduleId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Schedule ID not found.'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Confirm Room Release', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Room: $roomName',
+                style: const TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            const Text('Are you sure you want to release this room? This will update its status to Available so the next class can use it.',
+                style: TextStyle(color: Colors.grey)),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4CAF50),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Release Room', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator(color: Color(0xFFF26F21))),
+    );
+
+    try {
+      final res = await _userService.securityUpdateStatusRoom(scheduleId);
+      Navigator.pop(context);
+      if (res.status == 200 || res.status == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ Room $roomName is now Available!'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        _loadSchedules();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Update status error: ${res.message ?? res.status}'), backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
   // ── Status Helpers ──
   bool _isAccepted(String status) {
     final s = status.toLowerCase();
@@ -229,20 +305,33 @@ class _SecurityCheckInScreenState extends State<SecurityCheckInScreen> {
 
   // ── Empty Placeholder ──
   Widget _buildEmptyCard(IconData icon, String message) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 38, color: Colors.grey[300]),
-          const SizedBox(height: 8),
-          Text(message, style: TextStyle(color: Colors.grey[400], fontSize: 13)),
-        ],
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 48, color: Colors.grey[400]),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey[500],
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -250,7 +339,10 @@ class _SecurityCheckInScreenState extends State<SecurityCheckInScreen> {
   // ── Schedule Card ──
   Widget _buildScheduleCard(dynamic s, bool canCheckIn, {required bool isOverdue}) {
     final String roomName = s['roomName'] ?? 'N/A';
-    final String teacher = s['lecturerName'] ?? s['teacherName'] ?? s['teacherFullName'] ?? 'N/A';
+    final String teacherName = s['lecturerName'] ?? s['teacherName'] ?? s['teacherFullName'] ?? 'N/A';
+    final String rollNum = s['teacherRollNumber'] ?? s['lecturerRollNumber'] ?? s['teacherCode'] ?? '';
+    final String teacherId = s['teacherId']?.toString() ?? '';
+    final String teacher = rollNum.isNotEmpty ? '$teacherName ($rollNum)' : teacherName;
     final String rawDate = s['registraionScheduleDate'] ?? s['registrationScheduleDate'] ?? '';
     String displayDate = rawDate;
     try {
@@ -345,10 +437,28 @@ class _SecurityCheckInScreenState extends State<SecurityCheckInScreen> {
               child: Column(
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.person_outline, size: 15, color: Colors.grey[500]),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 1.0),
+                        child: Icon(Icons.person_outline, size: 15, color: Colors.grey[500]),
+                      ),
                       const SizedBox(width: 8),
-                      Expanded(child: Text(teacher, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF1E1E1E)))),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(teacher, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF1E1E1E))),
+                            if (teacherId.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                'Teacher ID: $teacherId',
+                                style: TextStyle(fontSize: 11, color: Colors.grey[600], fontWeight: FontWeight.w500, letterSpacing: -0.2),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -414,6 +524,25 @@ class _SecurityCheckInScreenState extends State<SecurityCheckInScreen> {
                     style: TextStyle(color: const Color(0xFF2196F3).withOpacity(0.8), fontSize: 13, fontWeight: FontWeight.w500)),
                 ],
               ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _doUpdateRoomStatus(s),
+                  icon: const Icon(Icons.meeting_room_rounded, size: 18),
+                  label: const Text(
+                    'Release Room · Make Available',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4CAF50),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
+                  ),
+                ),
+              ),
             ],
           ],
         ),
@@ -447,104 +576,118 @@ class _SecurityCheckInScreenState extends State<SecurityCheckInScreen> {
       return _isInProgress(status);
     }).toList();
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      backgroundColor: const Color(0xFFF8F9FA),
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
-        child: ClipRRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: AppBar(
-              title: const Text('Lab Check-in',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white)),
-              backgroundColor: const Color(0xFFF26F21).withOpacity(0.95),
-              elevation: 0,
-              iconTheme: const IconThemeData(color: Colors.white),
-              systemOverlayStyle: const SystemUiOverlayStyle(statusBarBrightness: Brightness.dark),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.refresh, color: Colors.white),
-                  onPressed: _loadSchedules,
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8F9FA),
+        appBar: AppBar(
+          title: const Text('Lab Check-in',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white)),
+          backgroundColor: const Color(0xFFF26F21),
+          elevation: 0,
+          foregroundColor: Colors.white,
+          iconTheme: const IconThemeData(color: Colors.white),
+          systemOverlayStyle: const SystemUiOverlayStyle(statusBarBrightness: Brightness.dark),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              onPressed: _loadSchedules,
+            ),
+          ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(60),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: TabBar(
+                labelColor: const Color(0xFFF26F21),
+                unselectedLabelColor: Colors.white,
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                indicator: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ],
+                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                tabs: [
+                  Tab(text: 'Today (${todaySchedules.length})'),
+                  Tab(text: 'Overdue (${overdueSchedules.length})'),
+                  Tab(text: 'Active (${inProgressSchedules.length})'),
+                ],
+              ),
             ),
           ),
         ),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFF26F21)))
-          : _errorMessage != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline, size: 60, color: Colors.red),
-                        const SizedBox(height: 16),
-                        Text(_errorMessage!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadSchedules,
-                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF26F21)),
-                          child: const Text('Retry', style: TextStyle(color: Colors.white)),
-                        ),
-                      ],
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: Color(0xFFF26F21)))
+            : _errorMessage != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.error_outline, size: 60, color: Colors.red),
+                          const SizedBox(height: 16),
+                          Text(_errorMessage!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _loadSchedules,
+                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF26F21)),
+                            child: const Text('Retry', style: TextStyle(color: Colors.white)),
+                          ),
+                        ],
+                      ),
                     ),
+                  )
+                : TabBarView(
+                    children: [
+                      // Tab 1: Today's Check-in
+                      todaySchedules.isEmpty
+                          ? Center(child: _buildEmptyCard(Icons.event_available_outlined, 'No sessions scheduled for today'))
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: todaySchedules.length,
+                              itemBuilder: (context, index) {
+                                return _buildScheduleCard(todaySchedules[index], true, isOverdue: false);
+                              },
+                            ),
+                      
+                      // Tab 2: Overdue Make-up Check-in
+                      overdueSchedules.isEmpty
+                          ? Center(child: _buildEmptyCard(Icons.check_circle_outline, 'No overdue sessions — all caught up!'))
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: overdueSchedules.length,
+                              itemBuilder: (context, index) {
+                                return _buildScheduleCard(overdueSchedules[index], true, isOverdue: true);
+                              },
+                            ),
+
+                      // Tab 3: In Progress / Active
+                      inProgressSchedules.isEmpty
+                          ? Center(child: _buildEmptyCard(Icons.hourglass_empty_outlined, 'No sessions currently in progress'))
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: inProgressSchedules.length,
+                              itemBuilder: (context, index) {
+                                return _buildScheduleCard(inProgressSchedules[index], false, isOverdue: false);
+                              },
+                            ),
+                    ],
                   ),
-                )
-              : ListView(
-                  padding: const EdgeInsets.only(top: 90, left: 20, right: 20, bottom: 32),
-                  children: [
-
-                    // ── Section 1: Today's Check-in ──
-                    _buildSectionHeader(
-                      title: "Today's Check-in",
-                      subtitle: 'Approved sessions scheduled for today',
-                      icon: Icons.today_outlined,
-                      count: todaySchedules.length,
-                      gradientColors: const [Color(0xFFF26F21), Color(0xFFFFA726)],
-                    ),
-                    const SizedBox(height: 4),
-                    if (todaySchedules.isEmpty)
-                      _buildEmptyCard(Icons.event_available_outlined, 'No sessions scheduled for today')
-                    else
-                      ...todaySchedules.map((s) => _buildScheduleCard(s, true, isOverdue: false)),
-
-                    const SizedBox(height: 16),
-
-                    // ── Section 2: Overdue — Make-up Check-in ──
-                    _buildSectionHeader(
-                      title: 'Overdue · Make-up Check-in',
-                      subtitle: 'Past sessions not yet checked in — notify lecturer',
-                      icon: Icons.warning_amber_rounded,
-                      count: overdueSchedules.length,
-                      gradientColors: const [Color(0xFFE53935), Color(0xFFEF5350)],
-                    ),
-                    const SizedBox(height: 4),
-                    if (overdueSchedules.isEmpty)
-                      _buildEmptyCard(Icons.check_circle_outline, 'No overdue sessions — all caught up!')
-                    else
-                      ...overdueSchedules.map((s) => _buildScheduleCard(s, true, isOverdue: true)),
-
-                    const SizedBox(height: 16),
-
-                    // ── Section 3: In Progress ──
-                    _buildSectionHeader(
-                      title: 'In Progress',
-                      subtitle: 'Key handed over · Lab session underway',
-                      icon: Icons.play_circle_outline,
-                      count: inProgressSchedules.length,
-                      gradientColors: const [Color(0xFF2196F3), Color(0xFF42A5F5)],
-                    ),
-                    const SizedBox(height: 4),
-                    if (inProgressSchedules.isEmpty)
-                      _buildEmptyCard(Icons.hourglass_empty_outlined, 'No sessions currently in progress')
-                    else
-                      ...inProgressSchedules.map((s) => _buildScheduleCard(s, false, isOverdue: false)),
-                  ],
-                ),
+      ),
     );
   }
 }

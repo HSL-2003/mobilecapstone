@@ -55,7 +55,7 @@ class _LecturerKitHistoryScreenState extends State<LecturerKitHistoryScreen> {
           } else {
             if (mounted) {
               setState(() {
-                _errorMessage = 'Không thể tải lịch sử Kit.';
+                _errorMessage = 'Cannot load kit history.';
                 _isLoading = false;
               });
             }
@@ -63,7 +63,7 @@ class _LecturerKitHistoryScreenState extends State<LecturerKitHistoryScreen> {
         } else {
           if (mounted) {
             setState(() {
-              _errorMessage = 'Information not found giảng viên.';
+              _errorMessage = 'Lecturer information not found.';
               _isLoading = false;
             });
           }
@@ -72,7 +72,7 @@ class _LecturerKitHistoryScreenState extends State<LecturerKitHistoryScreen> {
          if (mounted) {
           setState(() {
             _isLoading = false;
-            _errorMessage = 'Lỗi xác thực người dùng.';
+            _errorMessage = 'Authentication error.';
           });
          }
       }
@@ -91,14 +91,14 @@ class _LecturerKitHistoryScreenState extends State<LecturerKitHistoryScreen> {
     try {
       final res = await _userService.giveBackKit(teamKitId);
       if (res.status == 200 || res.status == 201) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thu hồi Kit thành công!'), backgroundColor: Colors.green));
+         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kit returned successfully!'), backgroundColor: Colors.green));
         _fetchHistory();
       } else {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${res.message}'), backgroundColor: Colors.red));
         setState(() => _isLoading = false);
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lỗi kết nối khi thu hồi Kit.'), backgroundColor: Colors.red));
+       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Network error while returning kit.'), backgroundColor: Colors.red));
       setState(() => _isLoading = false);
     }
   }
@@ -128,7 +128,7 @@ class _LecturerKitHistoryScreenState extends State<LecturerKitHistoryScreen> {
         : _errorMessage != null
           ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(_errorMessage!, style: const TextStyle(color: Colors.red))))
           : _kitHistory.isEmpty
-            ? const Center(child: Text("Team chưa có lịch sử mượn trả Kit.", style: TextStyle(color: Colors.grey)))
+            ? const Center(child: Text("Team has no kit borrow/return history.", style: TextStyle(color: Colors.grey)))
             : ListView.builder(
                 padding: EdgeInsets.only(top: widget.hideAppBar ? 24 : 100, left: 24, right: 24, bottom: 24),
                 itemCount: _kitHistory.length,
@@ -163,7 +163,7 @@ class _LecturerKitHistoryScreenState extends State<LecturerKitHistoryScreen> {
                   
                   final String rawStatus = hist['teamKitStatus']?.toString() ?? 'Unknown';
                   final String status = rawStatus == 'AreBorrowing' ? 'In Use' : (rawStatus == 'GiveBack' ? 'Returned' : (rawStatus == 'Paid' ? 'Returned' : rawStatus));
-                  final Color statusColor = (status == 'Returned' || status == 'Đã thanh toán') ? Colors.green : Colors.orange;
+                  final Color statusColor = (status == 'Returned' || status == 'Paid') ? Colors.green : Colors.orange;
                   
                   final int? teamKitId = int.tryParse(hist['teamKitId']?.toString() ?? '');
 
@@ -238,11 +238,11 @@ class _LecturerKitHistoryScreenState extends State<LecturerKitHistoryScreen> {
                               _buildTimeBadge(Icons.call_made, 'Borrow: $borrowTime', Colors.blue),
                               if (returnTime != null && returnTime.isNotEmpty && returnTime != 'null')
                                 _buildTimeBadge(Icons.call_received, 'Return: $returnTime', Colors.green)
-                              else if (teamKitId != null && status != 'Returned' && status != 'Đã thanh toán')
+                              else if (teamKitId != null && status != 'Returned' && status != 'Paid')
                                 OutlinedButton.icon(
                                   onPressed: () => _giveBack(teamKitId),
                                   icon: const Icon(Icons.assignment_return, size: 16),
-                                  label: const Text('Thu hồi Kit'),
+                                  label: const Text('Give Back Kit'),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: const Color(0xFFF26F21),
                                     side: const BorderSide(color: Color(0xFFF26F21)),
@@ -333,10 +333,10 @@ class _KitDetailModalState extends State<_KitDetailModal> {
           });
         }
       } else {
-        if (mounted) setState(() { _error = 'Lỗi tải chi tiết: ${res.message}'; _isLoading = false; });
+         if (mounted) setState(() { _error = 'Error: ${res.message}'; _isLoading = false; });
       }
     } catch(e) {
-      if (mounted) setState(() { _error = 'Lỗi mạng khi tải chi tiết.'; _isLoading = false; });
+       if (mounted) setState(() { _error = 'Network error.'; _isLoading = false; });
     }
   }
 
@@ -353,7 +353,7 @@ class _KitDetailModalState extends State<_KitDetailModal> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Chi Tiết Phân Bổ Kit', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF1E1E1E))),
+            const Text('Kit Assignment Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF1E1E1E))),
             const SizedBox(height: 24),
             if (_isLoading)
               const Center(child: CircularProgressIndicator(color: Color(0xFFF26F21)))
@@ -365,21 +365,21 @@ class _KitDetailModalState extends State<_KitDetailModal> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Status: ${_data!['teamKitStatus'] ?? "N/A"}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
-                    Text('ID Lớp: ${_data!['classId']}', style: const TextStyle(color: Colors.grey)),
+                    Text('Class ID: ${_data!['classId']}', style: const TextStyle(color: Colors.grey)),
                   ],
                 ),
                 const SizedBox(height: 16),
                 const Divider(),
                 const SizedBox(height: 16),
-                _buildRow('Tên Kit:', _data!['kitName']),
-                _buildRow('Mã Kit:', _data!['kitCode']),
-                _buildRow('Tên cho Nhóm:', _data!['teamKitName']),
-                _buildRow('Lớp học:', _data!['className']),
-                _buildRow('Nhóm:', _data!['teamName']),
+                _buildRow('Kit Name:', _data!['kitName']),
+                _buildRow('Kit Code:', _data!['kitCode']),
+                _buildRow('Team Name:', _data!['teamKitName']),
+                _buildRow('Class:', _data!['className']),
+                _buildRow('Team:', _data!['teamName']),
                 const Divider(),
-                _buildRow('Giờ mượn:', _data!['teamKitDateBorrow']?.toString() ?? 'N/A'),
-                _buildRow('Giờ trả:', _data!['teamKitDateGiveBack']?.toString() ?? 'Not Returned'),
-                _buildRow('Mô tả:', _data!['teamKitDescription']),
+                _buildRow('Borrow Time:', _data!['teamKitDateBorrow']?.toString() ?? 'N/A'),
+                _buildRow('Give Back Time:', _data!['teamKitDateGiveBack']?.toString() ?? 'Not Returned'),
+                _buildRow('Description:', _data!['teamKitDescription']),
               ],
             const SizedBox(height: 24),
             SizedBox(
@@ -408,7 +408,7 @@ class _KitDetailModalState extends State<_KitDetailModal> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(width: 100, child: Text(label, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500))),
-          Expanded(child: Text(value?.toString() ?? 'Trống', style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E1E1E)))),
+           Expanded(child: Text(value?.toString() ?? 'N/A', style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E1E1E)))),
         ],
       ),
     );

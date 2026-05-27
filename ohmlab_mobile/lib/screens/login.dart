@@ -117,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (error.runtimeType.toString() == 'DioException' || error.runtimeType.toString() == 'DioError') {
           dynamic dioError = error;
           if (dioError.response != null) {
-            errorText = 'Error code: ${dioError.response?.statusCode}\nChi tiết: ${dioError.response?.data}';
+            errorText = 'Error code: ${dioError.response?.statusCode}\nDetails: ${dioError.response?.data}';
           } else {
             errorText = dioError.message ?? errorText;
           }
