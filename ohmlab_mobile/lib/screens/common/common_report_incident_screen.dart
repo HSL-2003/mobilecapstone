@@ -109,21 +109,41 @@ class _CommonReportIncidentScreenState extends State<CommonReportIncidentScreen>
           final data = res.data;
           List<dynamic> all = List.from(data is List ? data : (data is Map && data.containsKey('data') ? data['data'] : []));
           
-          if (all.isEmpty && mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('API returned empty list for ID: '), backgroundColor: Colors.orange),
-            );
+          // 1. Filter by status: only completed and inprogress
+          List<dynamic> filtered = all.where((s) {
+            final status = (s['registraionScheduleStatus'] ?? s['registrationScheduleStatus'] ?? s['status'] ?? '').toString().toLowerCase();
+            return status == 'completed' || status == 'inprogress';
+          }).toList();
+
+          // 2. Filter to make sure the schedule is strictly within the last 3 calendar days from today
+          final now = DateTime.now();
+          final today = DateTime(now.year, now.month, now.day);
+          final threeDaysAgo = today.subtract(const Duration(days: 2)); // today, today - 1, today - 2
+          
+          List<dynamic> inRangeSchedules = [];
+          for (var s in filtered) {
+            final dateStr = (s['registraionScheduleDate'] ?? s['registrationScheduleDate'] ?? s['date'] ?? '').toString();
+            if (dateStr.isNotEmpty) {
+              try {
+                final date = DateTime.parse(dateStr);
+                final scheduleDate = DateTime(date.year, date.month, date.day);
+                if ((scheduleDate.isAfter(threeDaysAgo) || scheduleDate.isAtSameMomentAs(threeDaysAgo)) &&
+                    (scheduleDate.isBefore(today) || scheduleDate.isAtSameMomentAs(today))) {
+                  inRangeSchedules.add(s);
+                }
+              } catch (_) {}
+            }
           }
 
-          // Sort schedules by date descending (newest first)
-          all.sort((a, b) {
-            final dateA = a['registraionScheduleDate'] ?? a['registrationScheduleDate'] ?? a['date'] ?? '';
-            final dateB = b['registraionScheduleDate'] ?? b['registrationScheduleDate'] ?? b['date'] ?? '';
-            return dateB.toString().compareTo(dateA.toString());
+          // 3. Sort by date descending
+          inRangeSchedules.sort((a, b) {
+            final dateAStr = a['registraionScheduleDate'] ?? a['registrationScheduleDate'] ?? a['date'] ?? '';
+            final dateBStr = b['registraionScheduleDate'] ?? b['registrationScheduleDate'] ?? b['date'] ?? '';
+            return dateBStr.toString().compareTo(dateAStr.toString());
           });
 
           setState(() {
-            _todaySchedules = all;
+            _todaySchedules = inRangeSchedules;
             _isLoadingSchedules = false;
           });
           return;
